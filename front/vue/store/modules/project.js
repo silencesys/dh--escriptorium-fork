@@ -48,6 +48,8 @@ const state = () => ({
      * }]
      */
     documentTags: [],
+    /** total number of documents matching the current filters */
+    documentsCount: null,
     documentToDelete: null,
     deleteModalOpen: false,
     deleteDocumentModalOpen: false,
@@ -58,6 +60,10 @@ const state = () => ({
     menuOpen: false,
     name: "",
     nextPage: "",
+    /** who owns the project, and when it was created and last changed */
+    owner: "",
+    createdAt: "",
+    updatedAt: "",
     transcriptionFont: null,
     /** fonts: [{ pk, name, url, size_adjust }] */
     fonts: [],
@@ -336,6 +342,7 @@ const actions = {
         if (data) {
             commit("setName", data.name);
             commit("setSlug", data.slug);
+            commit("setDetails", data);
             commit("setGuidelines", data.guidelines);
             commit("setTranscriptionFont", data.transcription_font || null);
             const tagPks = data.tags.map((tag) => tag.pk);
@@ -447,6 +454,7 @@ const actions = {
             commit("setNextPage", "");
         }
         if (data?.results) {
+            commit("setDocumentsCount", data.count ?? null);
             commit(
                 "setDocuments",
                 data.results.map((result) => ({
@@ -549,6 +557,7 @@ const actions = {
                 commit("setName", name);
                 commit("setGuidelines", guidelines);
                 commit("setTranscriptionFont", transcriptionFont || null);
+                commit("setDetails", data);
                 const tagPks = data.tags.map((tag) => tag.pk);
                 commit(
                     "setTags",
@@ -647,6 +656,14 @@ const mutations = {
     },
     setDocumentToDelete(state, pk) {
         state.documentToDelete = pk;
+    },
+    setDetails(state, { owner, created_at: createdAt, updated_at: updatedAt }) {
+        state.owner = owner || "";
+        state.createdAt = createdAt || "";
+        state.updatedAt = updatedAt || "";
+    },
+    setDocumentsCount(state, count) {
+        state.documentsCount = count;
     },
     setEditModalOpen(state, open) {
         state.editModalOpen = open;

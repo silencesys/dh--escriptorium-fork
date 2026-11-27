@@ -59,9 +59,6 @@
 }
 
 /* detachable toolbar */
-.escr-button.attach-detach-toolbar svg {
-    stroke: var(--background2);
-}
 .escr-segmentation-toolbar.detached-toolbar {
     flex-flow: row wrap;
     align-items: center;
@@ -105,4 +102,29 @@
 }
 .seg-toolbar-btn-group.new-section {
   margin: 0 8px;
+}
+
+/* undo, redo and the options menu sit at the end of the row */
+.escr-seg-toolbar-end {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: auto;
+    padding-left: 8px;
+}
+/* options menu: check marks keep their room while off, shortcuts on the right */
+.escr-seg-options .escr-check-off {
+    visibility: hidden;
+}
+.escr-seg-options button {
+    width: 100%;
+}
+.escr-seg-options kbd {
+    margin-left: auto;
+    padding: 0 0 0 16px;
+    background: none;
+    box-shadow: none;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--text3);
 }

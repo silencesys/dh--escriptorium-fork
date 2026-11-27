@@ -1,10 +1,9 @@
 <template>
     <EscrPage class="escr-projects-list">
         <template #page-content>
-            <h1>Welcome back, {{ firstName || username }}</h1>
             <div class="escr-card escr-card-table">
                 <div class="escr-card-padding escr-card-header">
-                    <h2>Projects</h2>
+                    <h1>Projects</h1>
                     <div class="escr-card-actions">
                         <FilterSet
                             :disabled="loading"
@@ -139,14 +138,12 @@ export default {
         ...mapState({
             createModalOpen: (state) => state.projects.createModalOpen,
             deleteModalOpen: (state) => state.projects.deleteModalOpen,
-            firstName: (state) => state.user.firstName,
             fonts: (state) => state.projects.fonts,
             loading: (state) => state.projects.loading,
             nextPage: (state) => state.projects.nextPage,
             projects: (state) => state.projects.projects,
             projectToDelete: (state) => state.projects.projectToDelete,
             tags: (state) => state.projects.tags,
-            username: (state) => state.user.username,
         }),
         headers() {
             return [

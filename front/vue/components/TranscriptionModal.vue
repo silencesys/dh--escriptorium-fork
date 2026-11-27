@@ -468,6 +468,7 @@
 
 <script>
 import { mapState } from "vuex";
+import { fitKeyboardOnFocus } from "./VirtualKeyboard/fitKeyboard";
 import ArrowCircleLeftIcon from "./Icons/ArrowCircleLeftIcon/ArrowCircleLeftIcon.vue";
 import ArrowCircleRightIcon from "./Icons/ArrowCircleRightIcon/ArrowCircleRightIcon.vue";
 import EscrButton from "./Button/Button.vue";
@@ -647,8 +648,8 @@ export default Vue.extend({
         this.$store.commit("document/setBlockShortcuts", false);
     },
     mounted() {
-        // the new UI modal fills the work area: no backdrop over the nav bars, no drag/resize
-        $(this.$refs.transModal).modal({show: true, backdrop: this.legacyModeEnabled});
+        // the new UI modal is a centred overlay (closes on a click outside), no drag/resize
+        $(this.$refs.transModal).modal({show: true, backdrop: true});
         if (this.legacyModeEnabled) {
             $(this.$refs.transModal).draggable({handle: ".modal-header"});
             $(this.$refs.transModal).resizable();
@@ -978,6 +979,11 @@ export default Vue.extend({
                 // TODO: deal with other directions
                 container.style.marginLeft = context+"px";
             }
+            if (!this.legacyModeEnabled && this.mainTextDirection != "ttb") {
+                // new UI: the input spans the image's full width
+                container.style.marginLeft = "";
+                container.style.marginRight = "";
+            }
             if(this.mainTextDirection != "ttb"){
                 if (content) {
                     let lineWidth = bbox.width*ratio;
@@ -1100,6 +1106,8 @@ export default Vue.extend({
                 enableVirtualKeyboard(input);
                 input.vkOnfocus = input.onfocus;
             }
+            // new UI: the keyboard spans the input
+            if (!this.legacyModeEnabled) fitKeyboardOnFocus(input);
         }
     },
 });

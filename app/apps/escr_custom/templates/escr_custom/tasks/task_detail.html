@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load i18n timedelta escr_ui %}
+{% comment %}
+A task's page in the new UI (escr_custom.tasks.views.TaskDetail; the legacy UI
+keeps reporting/taskreport_detail.html). Styles: front/custom/tasks.css.
+{% endcomment %}
+{% block head_title %}{{ report.label }}{% endblock %}
+
+{% block body %}
+<div class="escr-tasks escr-task">
+    <a class="escr-task-back" href="{% url 'report-list' %}">{% icon "arrow-left" 14 %}{% trans "My Tasks" %}</a>
+    <h1>{{ report.label }}</h1>
+    <p class="escr-task-state">
+        <span class="escr-state escr-state--{{ report.state.key }}">{% icon report.state.icon 16 %}{{ report.state.label }}</span>
+        {% if report.document %}
+        <span class="escr-task-sep" aria-hidden="true">·</span>
+        <a href="{% url 'document-detail' report.document.pk %}">{% icon "file-text" 14 %}{{ report.document.name }}</a>
+        {% endif %}
+    </p>
+
+    <dl class="escr-task-facts">
+        <div class="escr-task-fact">
+            <dt>{% trans "Queued" %}</dt>
+            <dd><time datetime="{{ report.queued_at|date:'c' }}">{{ report.queued_at|date:"M j, H:i:s" }}</time></dd>
+        </div>
+        <div class="escr-task-fact">
+            <dt>{% trans "Started" %}</dt>
+            <dd>{% if report.started_at %}<time datetime="{{ report.started_at|date:'c' }}">{{ report.started_at|date:"M j, H:i:s" }}</time>
+                {% if waited %}<span class="escr-task-fact-hint">{% blocktrans with wait=waited|format_timedelta %}after {{ wait }} in the queue{% endblocktrans %}</span>{% endif %}
+                {% else %}<span class="escr-muted">{% trans "Not yet" %}</span>{% endif %}</dd>
+        </div>
+        <div class="escr-task-fact">
+            <dt>{% trans "Ended" %}</dt>
+            <dd>{% if report.done_at %}<time datetime="{{ report.done_at|date:'c' }}">{{ report.done_at|date:"M j, H:i:s" }}</time>
+                {% if ran %}<span class="escr-task-fact-hint">{% blocktrans with duration=ran|format_timedelta %}ran for {{ duration }}{% endblocktrans %}</span>{% endif %}
+                {% else %}<span class="escr-muted">{% trans "Not yet" %}</span>{% endif %}</dd>
+        </div>
+        <div class="escr-task-fact">
+            <dt>{% trans "CPU time" %}</dt>
+            <dd>{{ report.cpu_cost|minutes }} <span class="escr-muted">{% trans "min" %}</span></dd>
+        </div>
+        <div class="escr-task-fact">
+            <dt>{% trans "GPU time" %}</dt>
+            <dd>{{ report.gpu_cost|minutes }} <span class="escr-muted">{% trans "min" %}</span></dd>
+        </div>
+    </dl>
+
+    <section class="escr-task-log" aria-labelledby="escr-task-log-title">
+        <h2 id="escr-task-log-title">{% trans "Messages" %}</h2>
+        {% if report.messages %}
+        <pre>{{ report.messages }}</pre>
+        {% else %}
+        <p class="escr-muted">{% trans "This task left no messages." %}</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

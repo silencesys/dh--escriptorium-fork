@@ -1,91 +1,92 @@
 <template>
     <EscrPage class="escr-model-training">
         <template #page-content>
-            <h1>Model Training</h1>
-            <div class="escr-training-container">
-                <div class="escr-training-collections">
+            <div class="escr-training">
+                <header class="escr-training-header">
+                    <h1>Model training</h1>
+                    <EscrTabs
+                        v-model="activeTab"
+                        :tabs="trainingDataTabs"
+                    />
+                </header>
+                <div class="escr-training-body">
+                    <!-- the training data: browse to pick images, or review the selection -->
                     <div class="escr-training-data">
-                        <EscrTabs
-                            v-model="activeTab"
-                            :tabs="trainingDataTabs"
-                        />
-                        <div class="escr-tab-content">
-                            <!-- browser to populate training data -->
+                        <div
+                            v-show="activeTab === 'browse'"
+                            id="panel-browse"
+                            class="escr-tab-panel"
+                            role="tabpanel"
+                            aria-labelledby="tab-browse"
+                            tabindex="0"
+                        >
+                            <h2 class="sr-only">
+                                Browse
+                            </h2>
+                            <EscriptoriumBrowser
+                                v-if="escrBrowserLoaded"
+                                :preselected-project="preselectedProject"
+                                :preselected-document="preselectedDocument"
+                            />
                             <div
-                                v-show="activeTab === 'browse'"
-                                id="panel-browse"
-                                class="escr-tab-panel"
-                                role="tabpanel"
-                                aria-labelledby="tab-browse"
-                                tabindex="0"
+                                v-else
+                                class="escr-spinner escr-spinner--secondary"
+                                role="status"
                             >
-                                <h2 class="sr-only">
-                                    Browse
-                                </h2>
-                                <EscriptoriumBrowser
-                                    v-if="escrBrowserLoaded"
-                                    :preselected-project="preselectedProject"
-                                    :preselected-document="preselectedDocument"
-                                />
-                                <div
-                                    v-else
-                                    class="escr-spinner escr-spinner--secondary"
-                                    role="status"
-                                >
-                                    <span class="sr-only">Loading browser...</span>
-                                </div>
+                                <span class="sr-only">Loading browser...</span>
                             </div>
-                            <!-- selected documents expand/collapse section -->
+                        </div>
+                        <div
+                            v-show="activeTab === 'selected'"
+                            id="panel-selected"
+                            class="escr-tab-panel escr-selected-parts"
+                            role="tabpanel"
+                            aria-labelledby="tab-selected"
+                            tabindex="0"
+                        >
+                            <h2 class="sr-only">
+                                Selected images
+                            </h2>
                             <div
-                                v-show="activeTab === 'selected'"
-                                id="panel-selected"
-                                class="escr-tab-panel escr-selected-parts"
-                                role="tabpanel"
-                                aria-labelledby="tab-selected"
-                                tabindex="0"
+                                v-if="isLoadingCollection"
+                                class="escr-spinner escr-spinner--secondary"
+                                role="status"
                             >
-                                <h2 class="sr-only">
-                                    Selected Documents and Parts
-                                </h2>
-                                <div
-                                    v-if="isLoadingCollection"
-                                    class="escr-spinner escr-spinner--secondary"
-                                    role="status"
-                                >
-                                    <span class="sr-only">Loading collection...</span>
-                                </div>
-                                <SelectedDocuments v-else-if="collectionItems.length" />
-                                <div
-                                    v-else
-                                    class="escr-card escr-card-padding"
-                                >
-                                    <p>No parts currently selected.</p>
-                                    <p>Load a saved collection, or navigate to the Browse tab.</p>
-                                    <EscrButton
-                                        label="Browse"
-                                        color="outline-primary"
-                                        :on-click="() => activeTab = 'browse'"
-                                    />
-                                </div>
+                                <span class="sr-only">Loading collection...</span>
+                            </div>
+                            <SelectedDocuments v-else-if="collectionItems.length" />
+                            <div
+                                v-else
+                                class="escr-training-empty"
+                            >
+                                <p>No images selected yet.</p>
+                                <p class="escr-training-empty-hint">
+                                    Load a saved collection, or pick images to train on.
+                                </p>
+                                <EscrButton
+                                    label="Browse images"
+                                    color="outline-text"
+                                    :on-click="() => activeTab = 'browse'"
+                                />
                             </div>
                         </div>
                     </div>
-                    <!-- collection management -->
-                    <aside class="escr-training-sidebar">
-                        <section class="escr-collection-management">
-                            <h2>Manage Collection</h2>
+                    <!-- what to train on and what to train, in order, ending
+                         with the start button -->
+                    <aside class="escr-training-panel">
+                        <section class="escr-training-step">
+                            <h2>Training data</h2>
                             <ManageCollectionForm
                                 @loaded="activeTab = 'selected'"
                                 @new-started="activeTab = 'browse'"
                             />
                         </section>
+                        <section class="escr-training-step escr-training-step--model">
+                            <h2>Model</h2>
+                            <TrainForm />
+                        </section>
                     </aside>
                 </div>
-                <!-- model training form -->
-                <section class="escr-training-footer">
-                    <h2>Train Model</h2>
-                    <TrainForm />
-                </section>
             </div>
         </template>
     </EscrPage>
@@ -143,7 +144,7 @@ export default {
             return [
                 { label: "Browse", value: "browse" },
                 {
-                    label: "Selected Documents and Parts",
+                    label: "Selected",
                     value: "selected",
                     badge: this.collectionItems.length
                 },

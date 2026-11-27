@@ -16,10 +16,10 @@
                     :disabled="disabled"
                     :on-click="openPanelMenu"
                     color="text-alt"
-                    aria-label="Change Panel"
+                    :aria-label="`${panel.label} panel: change panel`"
                 >
                     <template #button-icon>
-                        <component :is="panelIcon" />
+                        <component :is="panel.icon" />
                     </template>
                     <template #button-icon-right>
                         <ChevronDownIcon />
@@ -27,66 +27,58 @@
                 </EscrButton>
                 <template #popper>
                     <ul class="escr-vertical-menu">
-                        <li>
+                        <li
+                            v-for="option in panels"
+                            :key="option.type"
+                        >
                             <button
                                 type="button"
                                 @mousedown="() => onSwitchPanel({
-                                    index: panelIndex, panel: 'segmentation'
+                                    index: panelIndex, panel: option.type
                                 })"
                             >
-                                <SegmentIcon />
-                                <span>Segmentation</span>
-                            </button>
-                        </li>
-                        <li>
-                            <button
-                                type="button"
-                                @mousedown="() => onSwitchPanel({
-                                    index: panelIndex, panel: 'visualisation'
-                                })"
-                            >
-                                <TranscribeIcon />
-                                <span>Transcription</span>
-                            </button>
-                        </li>
-                        <li>
-                            <button
-                                type="button"
-                                @mousedown="() => onSwitchPanel({
-                                    index: panelIndex, panel: 'diplomatic'
-                                })"
-                            >
-                                <TextPanelIcon />
-                                <span>Text / Line Ordering</span>
-                            </button>
-                        </li>
-                        <li>
-                            <button
-                                type="button"
-                                @mousedown="() => onSwitchPanel({
-                                    index: panelIndex, panel: 'source'
-                                })"
-                            >
-                                <ImageAnnotationIcon />
-                                <span>Image Annotation</span>
-                            </button>
-                        </li>
-                        <li>
-                            <button
-                                type="button"
-                                @mousedown="() => onSwitchPanel({
-                                    index: panelIndex, panel: 'elements'
-                                })"
-                            >
-                                <TableIcon />
-                                <span>Overview</span>
+                                <component :is="option.icon" />
+                                <span>{{ option.label }}</span>
                             </button>
                         </li>
                     </ul>
                 </template>
             </VMenu>
         </div>
-        <slot name="editor-tools-center" />
+        <!-- panel tools scroll sideways when they don't fit; the scrollbar is hidden and
+             an anchor (over a soft fade) shows each direction that can still scroll -->
+        <div class="escr-toolbar-tools">
+            <div
+                ref="scroller"
+                class="escr-toolbar-scroller"
+                @scroll.passive="updateScrollAnchors"
+                @wheel="onToolsWheel"
+            >
+                <slot name="editor-tools-center" />
+            </div>
+            <button
+                v-if="canScrollStart"
+                type="button"
+                class="escr-toolbar-anchor escr-toolbar-anchor-start"
+                tabindex="-1"
+                aria-label="Scroll tools back"
+                @mousedown.prevent
+                @click="scrollTools(-1)"
+            >
+                <ChevronLeftIcon />
+            </button>
+            <button
+                v-if="canScrollEnd"
+                type="button"
+                class="escr-toolbar-anchor escr-toolbar-anchor-end"
+                tabindex="-1"
+                aria-label="Scroll tools forward"
+                @mousedown.prevent
+                @click="scrollTools(1)"
+            >
+                <ChevronRightIcon />
+            </button>
+        </div>
         <div
             v-if="editorPanels.length > 1 && !disabled"
             class="escr-editortools-close"
@@ -113,29 +105,27 @@
     </div>
 </template>
 <script>
-import ChevronDownIcon from "../Icons/ChevronDownIcon/ChevronDownIcon.vue";
+import { ChevronDown, ChevronLeft, ChevronRight, X } from "lucide";
 import EscrButton from "../Button/Button.vue";
-import ImageAnnotationIcon from "../Icons/ImageAnnotationIcon/ImageAnnotationIcon.vue";
-import RemovePanelIcon from "../Icons/RemovePanelIcon/RemovePanelIcon.vue";
-import SegmentIcon from "../Icons/SegmentIcon/SegmentIcon.vue";
-import TableIcon from "../Icons/TableIcon/TableIcon.vue";
-import TranscribeIcon from "../Icons/TranscribeIcon/TranscribeIcon.vue";
-import TextPanelIcon from "../Icons/TextPanelIcon/TextPanelIcon.vue";
+import lucideIcon from "../Icons/Lucide/lucideIcon";
+import PANELS from "./panels";
 import { Dropdown as VDropdown, Menu as VMenu } from "floating-vue";
 import { mapActions, mapState } from "vuex";
 import "./EditorToolbar.css";
+
+const ChevronDownIcon = lucideIcon(ChevronDown);
+const ChevronLeftIcon = lucideIcon(ChevronLeft);
+const ChevronRightIcon = lucideIcon(ChevronRight);
+const RemovePanelIcon = lucideIcon(X);
 
 export default {
     name: "EscrEditorToolbar",
     components: {
         ChevronDownIcon,
+        ChevronLeftIcon,
+        ChevronRightIcon,
         EscrButton,
-        ImageAnnotationIcon,
         RemovePanelIcon,
-        SegmentIcon,
-        TableIcon,
-        TranscribeIcon,
-        TextPanelIcon,
         VDropdown,
         VMenu,
     },
@@ -165,44 +155,31 @@ export default {
     data() {
         return {
             panelMenuOpen: false,
+            panels: PANELS,
+            canScrollStart: false,
+            canScrollEnd: false,
         }
+    },
+    mounted() {
+        // the tools' width changes with the panel width and with the tools shown (modes)
+        this.resizeObserver = new ResizeObserver(() => this.updateScrollAnchors());
+        this.resizeObserver.observe(this.$refs.scroller);
+        for (const child of this.$refs.scroller.children) this.resizeObserver.observe(child);
+        this.updateScrollAnchors();
+    },
+    beforeDestroy() {
+        this.resizeObserver?.disconnect();
     },
     computed: {
         ...mapState({
             editorPanels: (state) => state.document.editorPanels,
         }),
-        panelIcon() {
-            switch (this.panelType) {
-                case "segmentation":
-                    return SegmentIcon;
-                case "visualisation":
-                    return TranscribeIcon;
-                case "diplomatic":
-                    return TextPanelIcon;
-                case "source":
-                    return ImageAnnotationIcon;
-                case "elements":
-                    return TableIcon;
-                default:
-                    return null;
-            }
+        panel() {
+            return PANELS.find((p) => p.type === this.panelType) || { label: "", icon: null };
         },
         panelName() {
-            switch (this.panelType) {
-                case "segmentation":
-                    return "segmentation";
-                case "visualisation":
-                    return "transcription";
-                case "diplomatic":
-                    return "text/line ordering";
-                case "source":
-                    return "text annotation";
-                case "elements":
-                    return "overview";
-                default:
-                    return null;
-            }
-        }
+            return this.panel.label;
+        },
     },
     methods: {
         ...mapActions("document", ["removeEditorPanel", "switchEditorPanel"]),
@@ -215,6 +192,26 @@ export default {
         },
         openPanelMenu() {
             this.panelMenuOpen = true;
+        },
+        updateScrollAnchors() {
+            const el = this.$refs.scroller;
+            if (!el) return;
+            const max = el.scrollWidth - el.clientWidth;
+            this.canScrollStart = el.scrollLeft > 1;
+            this.canScrollEnd = el.scrollLeft < max - 1;
+        },
+        onToolsWheel(event) {
+            // a vertical mouse wheel scrolls the tools sideways (trackpads scroll natively)
+            const el = this.$refs.scroller;
+            if (el.scrollWidth <= el.clientWidth) return;
+            if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+            const lineHeight = event.deltaMode === 1 ? 32 : 1;
+            el.scrollLeft += event.deltaY * lineHeight;
+            event.preventDefault();
+        },
+        scrollTools(direction) {
+            const el = this.$refs.scroller;
+            el.scrollBy({ left: direction * el.clientWidth * 0.7, behavior: "smooth" });
         },
     },
 }

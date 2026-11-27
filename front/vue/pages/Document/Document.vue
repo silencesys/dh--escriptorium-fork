@@ -3,105 +3,119 @@
         class="escr-document-dashboard"
         :breadcrumbs="breadcrumbs"
         :sidebar-actions="sidebarActions"
+        sidebar-title="Document"
         :loading="loading && loading.document"
     >
         <template #page-content>
-            <div class="escr-grid-container">
-                <div class="escr-doc-left-grid">
-                    <!-- Document metadata header -->
-                    <div class="escr-card escr-card-padding escr-document-details">
-                        <div class="escr-card-header">
+            <div class="escr-document">
+                <div class="escr-document-main">
+                    <!-- title, document actions and what the document is -->
+                    <header class="escr-detail-header">
+                        <div class="escr-detail-title">
                             <h1 :title="documentName">
                                 {{ documentName }}
                             </h1>
-                            <div class="escr-card-actions">
+                            <div class="escr-detail-actions">
+                                <EscrButton
+                                    label="Share"
+                                    color="outline-text"
+                                    :on-click="openShareModal"
+                                    :disabled="loading && loading.document"
+                                >
+                                    <template #button-icon>
+                                        <ShareIcon />
+                                    </template>
+                                </EscrButton>
+                                <EscrButton
+                                    label="Edit"
+                                    color="outline-text"
+                                    :on-click="openEditModal"
+                                    :disabled="(loading && loading.document) || editModalOpen"
+                                >
+                                    <template #button-icon>
+                                        <EditIcon />
+                                    </template>
+                                </EscrButton>
                                 <VerticalMenu
                                     :is-open="documentMenuOpen"
                                     :close-menu="closeDocumentMenu"
                                     :open-menu="openDocumentMenu"
-                                    :disabled="(loading && loading.document) || editModalOpen || deleteModalOpen"
+                                    :disabled="(loading && loading.document) || deleteModalOpen"
                                     :items="documentMenuItems"
                                 />
-                                <EditDocumentModal
-                                    v-if="editModalOpen"
-                                    :disabled="loading && loading.document"
-                                    :fonts="fonts"
-                                    :new-document="false"
-                                    :on-cancel="closeEditModal"
-                                    :on-create-tag="createNewDocumentTag"
-                                    :on-save="saveDocument"
-                                    :scripts="scripts"
-                                    :tags="allDocumentTags"
-                                />
                             </div>
-                        </div>
-                        <span class="escr-document-metadata">
-                            Main script: {{ mainScript }}
-                        </span>
-                    </div>
-
-                    <!-- Document tags card -->
-                    <div class="escr-card escr-card-padding escr-document-tags">
-                        <div class="escr-card-header">
-                            <h2>Tags</h2>
                         </div>
                         <EscrTags
                             v-if="tags && tags.length"
+                            class="escr-detail-tags"
                             :tags="tags"
                             wrap
                         />
-                        <EscrLoader
-                            v-else
-                            :loading="loading && loading.document"
-                            no-data-message="This document does not have any tags. You can add tags
-                                using the Edit form, accessible from the dropdown menu in the above
-                                panel (to the right of the document title)."
-                        />
-                    </div>
-
-                    <!-- Document tasks card -->
-                    <div class="escr-card escr-card-table escr-document-tasks">
-                        <div class="escr-card-header">
-                            <h2>Tasks</h2>
-                            <div class="escr-card-actions">
-                                <EscrButton
-                                    label="View All"
-                                    size="small"
-                                    :on-click="() => navigateToTasks()"
-                                    :disabled="loading && loading.tasks"
-                                >
-                                    <template #button-icon-right>
-                                        <ArrowRightIcon />
-                                    </template>
-                                </EscrButton>
+                        <!-- grouped: where it lives and who sees it, its text, dates -->
+                        <dl class="escr-details">
+                            <div class="escr-detail-group">
+                                <div v-if="projectName">
+                                    <dt>Project</dt>
+                                    <dd>
+                                        <a
+                                            :href="`/project/${projectSlug}/`"
+                                            class="escr-detail-link"
+                                        >{{ projectName }}</a>
+                                    </dd>
+                                </div>
+                                <div>
+                                    <dt>Shared with</dt>
+                                    <dd>
+                                        <button
+                                            type="button"
+                                            class="escr-detail-link"
+                                            :disabled="loading && loading.document"
+                                            @click="openShareModal"
+                                        >
+                                            {{ sharing }}
+                                        </button>
+                                    </dd>
+                                </div>
                             </div>
-                        </div>
-                        <div
-                            v-if="tasks.length"
-                            class="tasks-container"
-                        >
-                            <TaskDashboard />
-                        </div>
-                        <EscrLoader
-                            v-else
-                            :loading="loading && loading.tasks"
-                            no-data-message="There are no tasks to display."
-                        />
-                    </div>
+                            <div class="escr-detail-group">
+                                <div>
+                                    <dt>Main script</dt>
+                                    <dd :class="{ 'escr-detail-empty': !mainScript }">
+                                        {{ mainScript || "None" }}
+                                    </dd>
+                                </div>
+                                <div v-if="readDirection">
+                                    <dt>Reading direction</dt>
+                                    <dd>{{ readDirectionLabel }}</dd>
+                                </div>
+                            </div>
+                            <div class="escr-detail-group">
+                                <div v-if="createdAt">
+                                    <dt>Created</dt>
+                                    <dd>{{ formatDate(createdAt) }}</dd>
+                                </div>
+                                <div v-if="lastModified">
+                                    <dt>Updated</dt>
+                                    <dd>{{ formatDate(lastModified) }}</dd>
+                                </div>
+                            </div>
+                        </dl>
+                    </header>
 
-                    <!-- Document images list -->
-                    <div class="escr-card escr-card-table escr-document-images">
+                    <!-- recent images -->
+                    <section class="escr-detail-section escr-document-images">
                         <div class="escr-card-header">
-                            <h2>Your Recent Images</h2>
+                            <h2>Recent images</h2>
                             <div class="escr-card-actions">
                                 <EscrButton
-                                    label="View All"
+                                    label="All images"
                                     size="small"
+                                    color="outline-text"
                                     :on-click="() => navigateToImages()"
                                     :disabled="loading && loading.parts"
                                 >
                                     <template #button-icon-right>
-                                        <ArrowRightIcon />
+                                        <ArrowIcon />
                                     </template>
                                 </EscrButton>
                             </div>
@@ -120,85 +134,61 @@
                         <EscrLoader
                             v-else
                             :loading="loading && loading.parts"
-                            no-data-message="There are no images to display"
+                            no-data-message="There are no images to display."
                         />
-                    </div>
+                    </section>
+
+                    <!-- recent tasks -->
+                    <section class="escr-detail-section escr-document-tasks">
+                        <div class="escr-card-header">
+                            <h2>Tasks</h2>
+                            <div class="escr-card-actions">
+                                <EscrButton
+                                    label="All tasks"
+                                    size="small"
+                                    color="outline-text"
+                                    :on-click="() => navigateToTasks()"
+                                    :disabled="loading && loading.tasks"
+                                >
+                                    <template #button-icon-right>
+                                        <ArrowIcon />
+                                    </template>
+                                </EscrButton>
+                            </div>
+                        </div>
+                        <TaskDashboard v-if="tasks.length" />
+                        <EscrLoader
+                            v-else
+                            :loading="loading && loading.tasks"
+                            no-data-message="There are no tasks to display."
+                        />
+                    </section>
                 </div>
-                <div class="escr-doc-right-grid">
-                    <!-- transcription picker -->
-                    <div class="doc-stats-header">
-                        <h2>Document Statistics</h2>
-                        <div>
-                            <h3>View:</h3>
+
+                <!-- statistics: tiles, characters and ontology -->
+                <aside class="escr-document-stats">
+                    <div class="escr-document-stats-header">
+                        <h2>Statistics</h2>
+                        <label class="escr-document-stats-view">
+                            <span>Transcription</span>
                             <EscrDropdown
                                 :options="transcriptionLevels"
                                 :on-change="selectTranscription"
                             />
-                        </div>
+                        </label>
                     </div>
-
-                    <!-- Document total images card -->
-                    <div class="escr-card escr-card-padding images-stats">
-                        <div class="escr-card-header">
-                            <h2>Total Images</h2>
-                        </div>
-                        <span class="escr-stat">
-                            {{
-                                (!loading.document && partsCount)
-                                    ? partsCount.toLocaleString()
-                                    : "-"
-                            }}
-                        </span>
-                    </div>
-                    <!-- Document total lines card -->
-                    <div class="escr-card escr-card-padding lines-stats">
-                        <div class="escr-card-header">
-                            <h2>Total Lines</h2>
-                        </div>
-                        <EscrLoader
-                            v-if="!lineCount ||
-                                (transcriptionLoading && transcriptionLoading.characterCount)
-                            "
-                            class="escr-stat"
-                            :loading="transcriptionLoading && transcriptionLoading.characterCount"
-                            no-data-message="-"
-                        />
-                        <span
-                            v-else-if="lineCount"
-                            class="escr-stat"
+                    <dl class="escr-stat-tiles">
+                        <div
+                            v-for="stat in stats"
+                            :key="stat.label"
+                            class="escr-stat-tile"
                         >
-                            {{ lineCount.toLocaleString() }}
-                        </span>
-                    </div>
-                    <!-- Document total characters card -->
-                    <div class="escr-card escr-card-padding chars-stats">
-                        <div class="escr-card-header">
-                            <h2>Total Characters</h2>
+                            <dt>{{ stat.label }}</dt>
+                            <dd :class="{ 'escr-stat-tile-empty': stat.empty }">
+                                {{ stat.value }}
+                            </dd>
                         </div>
-                        <EscrLoader
-                            v-if="!charCount ||
-                                (transcriptionLoading && transcriptionLoading.characterCount)
-                            "
-                            class="escr-stat"
-                            :loading="transcriptionLoading && transcriptionLoading.characterCount"
-                            no-data-message="-"
-                        />
-                        <span
-                            v-else-if="charCount"
-                            class="escr-stat"
-                        >
-                            {{ charCount.toLocaleString() }}
-                        </span>
-                    </div>
-                    <!-- Document transcription status card -->
-                    <div class="escr-card escr-card-padding transcription-status">
-                        <h2>Transcription Status</h2>
-                        <dl>
-                            <dt>Confidence</dt>
-                            <dd>{{ transcriptionConfidence }}</dd>
-                        </dl>
-                    </div>
-                    <!-- Characters section -->
+                    </dl>
                     <CharactersCard
                         class="escr-document-characters"
                         compact
@@ -208,14 +198,24 @@
                         :sort="charactersSort && charactersSort.field"
                         :items="characters"
                     />
-                    <!-- Ontology section -->
                     <OntologyCard
                         class="escr-document-ontology"
                         context="Document"
                         compact
                         :loading="loading && loading.document"
                     />
-                </div>
+                </aside>
+                <EditDocumentModal
+                    v-if="editModalOpen"
+                    :disabled="loading && loading.document"
+                    :fonts="fonts"
+                    :new-document="false"
+                    :on-cancel="closeEditModal"
+                    :on-create-tag="createNewDocumentTag"
+                    :on-save="saveDocument"
+                    :scripts="scripts"
+                    :tags="allDocumentTags"
+                />
                 <!-- delete document modal -->
                 <ConfirmModal
                     v-if="deleteModalOpen"
@@ -335,12 +335,12 @@
     </EscrPage>
 </template>
 <script>
+import { ArrowRight, Pencil, Trash2, UserPlus } from "lucide";
 import ReconnectingWebSocket from "reconnectingwebsocket";
 import { mapActions, mapState } from "vuex";
 import AlignModal from "../../components/AlignModal/AlignModal.vue";
 import DownloadArchiveModal from "../../components/DownloadArchiveModal/DownloadArchiveModal.vue";
 import ExportModal from "../../components/ExportModal/ExportModal.vue";
-import ArrowRightIcon from "../../components/Icons/ArrowRightIcon/ArrowRightIcon.vue";
 import CharactersCard from "../../components/CharactersCard/CharactersCard.vue";
 import ConfirmModal from "../../components/ConfirmModal/ConfirmModal.vue";
 import EditDocumentModal from "../../components/EditDocumentModal/EditDocumentModal.vue";
@@ -354,7 +354,6 @@ import ImportModal from "../../components/ImportModal/ImportModal.vue";
 import ModelsIcon from "../../components/Icons/ModelsIcon/ModelsIcon.vue";
 import ModelsPanel from "../../components/ModelsPanel/ModelsPanel.vue";
 import OntologyCard from "../../components/OntologyCard/OntologyCard.vue";
-import PencilIcon from "../../components/Icons/PencilIcon/PencilIcon.vue";
 import PeopleIcon from "../../components/Icons/PeopleIcon/PeopleIcon.vue";
 import QuickActionsPanel from "../../components/QuickActionsPanel/QuickActionsPanel.vue";
 import SearchIcon from "../../components/Icons/SearchIcon/SearchIcon.vue";
@@ -364,21 +363,31 @@ import ShareModal from "../../components/SharePanel/ShareModal.vue";
 import SharePanel from "../../components/SharePanel/SharePanel.vue";
 import TaskDashboard from "./TaskDashboard.vue";
 import ToolsIcon from "../../components/Icons/ToolsIcon/ToolsIcon.vue";
-import TrashIcon from "../../components/Icons/TrashIcon/TrashIcon.vue";
 import TranscribeModal from "../../components/TranscribeModal/TranscribeModal.vue";
 import VerticalMenu from "../../components/VerticalMenu/VerticalMenu.vue";
+import lucideIcon from "../../components/Icons/Lucide/lucideIcon";
 import "../../components/Common/Card.css"
+import "../../components/Common/DetailHeader.css";
 import "./Document.css";
+
+const ArrowIcon = lucideIcon(ArrowRight);
+const EditIcon = lucideIcon(Pencil);
+const ShareIcon = lucideIcon(UserPlus);
+const DeleteIcon = lucideIcon(Trash2);
+
+const plural = (count, word) => `${count} ${word}${count === 1 ? "" : "s"}`;
+const READ_DIRECTIONS = { ltr: "Left to right", rtl: "Right to left" };
 
 export default {
     name: "EscrDocumentDashboard",
     components: {
         AlignModal,
-        ArrowRightIcon,
+        ArrowIcon,
         CharactersCard,
         ConfirmModal,
         DownloadArchiveModal,
         EditDocumentModal,
+        EditIcon,
         EscrButton,
         EscrDropdown,
         EscrLoader,
@@ -395,22 +404,19 @@ export default {
         // eslint-disable-next-line vue/no-unused-components
         PeopleIcon,
         // eslint-disable-next-line vue/no-unused-components
-        PencilIcon,
-        // eslint-disable-next-line vue/no-unused-components
         QuickActionsPanel,
         // eslint-disable-next-line vue/no-unused-components
         SearchIcon,
         // eslint-disable-next-line vue/no-unused-components
         SearchPanel,
         SegmentModal,
+        ShareIcon,
         ShareModal,
         // eslint-disable-next-line vue/no-unused-components
         SharePanel,
         TaskDashboard,
         // eslint-disable-next-line vue/no-unused-components
         ToolsIcon,
-        // eslint-disable-next-line vue/no-unused-components
-        TrashIcon,
         TranscribeModal,
         VerticalMenu,
     },
@@ -454,6 +460,7 @@ export default {
             effectiveTranscriptionFont: (state) => state.document.effectiveTranscriptionFont,
             allDocumentTags: (state) => state.project.documentTags,
             charCount: (state) => state.transcription.characterCount,
+            createdAt: (state) => state.document.createdAt,
             characters: (state) => state.characters.characters,
             charactersLoading: (state) => state.characters.loading,
             charactersSort: (state) => state.characters.sortState,
@@ -463,6 +470,7 @@ export default {
             deleteModalOpen: (state) => state.document.deleteModalOpen,
             editModalOpen: (state) => state.document.editModalOpen,
             groups: (state) => state.user.groups,
+            lastModified: (state) => state.document.lastModified,
             lineCount: (state) => state.transcription.lineCount,
             loading: (state) => state.document.loading,
             mainScript: (state) => state.document.mainScript,
@@ -473,6 +481,7 @@ export default {
             projectId: (state) => state.document.projectId,
             projectName: (state) => state.document.projectName,
             projectSlug: (state) => state.document.projectSlug,
+            readDirection: (state) => state.document.readDirection,
             recognitionModels: (state) => state.user.recognitionModels,
             regionTypes: (state) => state.document.regionTypes,
             segmentationModels: (state) => state.user.segmentationModels,
@@ -510,23 +519,17 @@ export default {
             ];
         },
         /**
-         * Menu items for the vertical menu in the top right corner of the dashboard.
+         * The document menu (editing and sharing are buttons beside it).
          */
         documentMenuItems() {
             return [
                 {
-                    icon: PencilIcon,
-                    key: "edit",
-                    label: "Edit",
-                    onClick: this.openEditModal,
-                },
-                {
-                    icon: TrashIcon,
+                    icon: DeleteIcon,
                     key: "delete",
-                    label: "Delete Document",
+                    label: "Delete document",
                     onClick: this.openDeleteModal,
-                }
-            ]
+                },
+            ];
         },
         /**
          * Headers for the parts (images) table.
@@ -535,12 +538,45 @@ export default {
             return [
                 { label: "Name", value: "title", image: "thumbnail" },
                 {
-                    label: "Last Update",
+                    label: "Updated",
                     value: "updated_at",
-                    format: (val) => new Date(val).toLocaleDateString(
-                        undefined,
-                        { year: "numeric", month: "long", day: "numeric" },
-                    ),
+                    format: (val) => this.formatDate(val),
+                },
+            ];
+        },
+        /**
+         * Who the document is shared with.
+         */
+        sharing() {
+            const users = this.sharedWithUsers?.length;
+            const groups = this.sharedWithGroups?.length;
+            const parts = [];
+            if (users) parts.push(plural(users, "user"));
+            if (groups) parts.push(plural(groups, "group"));
+            return parts.length ? parts.join(", ") : "Not shared";
+        },
+        readDirectionLabel() {
+            return READ_DIRECTIONS[this.readDirection] || this.readDirection;
+        },
+        /**
+         * The statistics tiles: images of the document, then lines, characters
+         * and confidence of the selected transcription.
+         */
+        stats() {
+            const counting = this.transcriptionLoading?.characterCount;
+            const count = (value, loading) => {
+                if (loading) return { value: "…", empty: true };
+                return value ? { value: value.toLocaleString() } : { value: "–", empty: true };
+            };
+            const confidence = this.transcriptionConfidence;
+            return [
+                { label: "Images", ...count(this.partsCount, this.loading?.document) },
+                { label: "Lines", ...count(this.lineCount, counting) },
+                { label: "Characters", ...count(this.charCount, counting) },
+                {
+                    label: "Confidence",
+                    value: confidence || "–",
+                    empty: !confidence,
                 },
             ];
         },
@@ -603,7 +639,7 @@ export default {
             const confidence = this.transcriptions?.find(
                 (transcription) => transcription.pk === this.selectedTranscription
             )?.avg_confidence;
-            return confidence ? `${Math.round(confidence * 100)}%` : "N/A";
+            return confidence ? `${Math.round(confidence * 100)}%` : "";
         },
         transcriptionLevels() {
             return this.transcriptions.map((transcription) => ({
@@ -682,6 +718,12 @@ export default {
             cancelTask: "cancel",
             closeTaskModal: "closeModal",
         }),
+        formatDate(value) {
+            return new Date(value).toLocaleDateString(
+                undefined,
+                { year: "numeric", month: "short", day: "numeric" },
+            );
+        },
         navigateToImages() {
             if (this.id) {
                 window.location = `/document/${this.id}/images`;

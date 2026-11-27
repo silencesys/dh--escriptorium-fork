@@ -1,85 +1,321 @@
+/*
+ * Left sidebar: sits directly on the page background (no panel colour, no
+ * shadow). Default options on top, then a divider and the contextual actions
+ * of the current page.
+ *
+ * Top bar: one line with the logo, holding the page's breadcrumbs (or the
+ * page title as fallback), the theme switch and the profile menu.
+ *
+ * Both are fixed to the viewport, so the navigation looks the same whether
+ * EscrPage renders it (Vue pages) or the standalone #vue-global-nav app does
+ * (Django pages). <main> starts right of and below them, so page headings
+ * never scroll into the top bar.
+ */
+:root {
+    --nav-width: 232px;
+    --topbar-height: 56px;
+}
+/* the standalone mount point takes no room: the nav is fixed */
+#vue-global-nav {
+    display: contents;
+}
 .escr-global-nav {
-    width: 64px;
-    min-width: 64px;
-    background: var(--background1);
-    display: flex;
-    flex-flow: column;
-    padding: 20px 0;
-    justify-content: space-between;
-    filter: drop-shadow(0px 4px 4px var(--drop-shadow));
-}
-.escr-global-nav > div {
-    width: 64px;
-    min-width: 64px;
-    display: flex;
-    align-items: center;
-    flex-flow: column;
-}
-.escr-global-nav a.escr-global-search {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    width: 42px;
-    height: 42px;
-    background: var(--background);
-    border-radius: 10px;
-    color: var(--text1);
-    fill: var(--text1);
-    margin-top: 32px;
-}
-.escr-global-nav .escr-globalnav-icon {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
+    --nav-pad: 12px;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: var(--global-nav-z);
+    width: var(--nav-width);
+    min-width: var(--nav-width);
     box-sizing: border-box;
-    width: 56px;
-    height: 56px;
-    padding: 8px;
-    margin-top: 24px;
+    display: flex;
+    flex-flow: column;
+    padding: 0 var(--nav-pad) 16px;
+    background: var(--background);
+    color: var(--text1);
+}
+.escr-global-nav .escr-nav-logo {
+    display: flex;
+    align-items: center;
+    flex: none;
+    height: var(--topbar-height);
+    padding-left: 8px;
+    margin-bottom: 8px;
+}
+.escr-global-nav .escr-nav-logo svg {
+    width: 30px;
+    height: 30px;
+}
+.escr-global-nav .escr-upper-navgroup {
+    display: flex;
+    flex-flow: column;
+    flex: 1 1 auto;
+    gap: 2px;
+    min-height: 0;
+    overflow-y: auto;
+    /* room for focus rings inside the scroll area */
+    margin: 0 calc(-1 * var(--nav-pad));
+    padding: 0 var(--nav-pad);
+}
+.escr-global-nav .escr-upper-navgroup > .v-popper {
+    display: block;
+}
+
+/* nav rows: icon + label side by side */
+.escr-global-nav .escr-globalnav-icon,
+.escr-global-nav .escr-sidebar-button {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    gap: 12px;
+    box-sizing: border-box;
+    width: 100%;
+    height: 36px;
+    margin: 0;
+    padding: 0 10px;
     border: none;
     border-radius: 8px;
     background: transparent;
-    font-size: 10px;
-    font-weight: 600;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1;
+    text-align: left;
     text-decoration: none;
     cursor: pointer;
-    font-family: inherit;
-    color: var(--text1);
-    fill: var(--text1);
-    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out,
-        fill 0.15s ease-in-out;
+    color: var(--text2);
+    fill: var(--text2);
+    transition: color 0.15s ease, background-color 0.15s ease, fill 0.15s ease;
+}
+.escr-global-nav .escr-globalnav-icon svg,
+.escr-global-nav .escr-sidebar-button svg {
+    flex: none;
+    width: 18px;
+    height: 18px;
+}
+.escr-global-nav .escr-globalnav-icon span,
+.escr-global-nav .escr-sidebar-button span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 .escr-global-nav .escr-globalnav-icon:hover,
-.escr-global-nav .escr-globalnav-icon:focus,
-.escr-global-nav .escr-globalnav-icon[data-popper-shown] {
-    background-color: var(--secondary-hover);
+.escr-global-nav .escr-globalnav-icon:focus-visible,
+.escr-global-nav .escr-globalnav-icon[data-popper-shown],
+.escr-global-nav .escr-sidebar-button:hover,
+.escr-global-nav .escr-sidebar-button:focus-visible {
+    background-color: var(--nav-hover);
+    color: var(--text1);
+    fill: var(--text1);
+    text-decoration: none;
+}
+.escr-global-nav .escr-globalnav-icon-active,
+.escr-global-nav .escr-globalnav-icon:active,
+.escr-global-nav .escr-sidebar-button--selected,
+.escr-global-nav .escr-sidebar-button:active {
+    background-color: var(--nav-active);
+    color: var(--text1);
+    fill: var(--primary);
+}
+.escr-global-nav .escr-sidebar-button:disabled {
+    color: var(--text3);
+    fill: var(--text3);
+    pointer-events: none;
+    cursor: default;
+}
+.escr-global-nav .escr-globalnav-icon:focus-visible,
+.escr-global-nav .escr-sidebar-button:focus-visible {
+    outline: 2px solid var(--primary-focus);
+    outline-offset: 0;
+}
+
+/* expandable group (Tasks): chevron on the row, sub-items listed below it */
+.escr-global-nav .escr-nav-group-toggle .escr-nav-chevron {
+    width: 10px;
+    height: 6px;
+    margin-left: auto;
+    flex: none;
+    fill: var(--text3);
+    transition: transform 0.15s ease;
+}
+.escr-global-nav .escr-nav-group-toggle .escr-nav-chevron--open {
+    transform: rotate(180deg);
+}
+.escr-global-nav .escr-nav-submenu {
+    display: flex;
+    flex-flow: column;
+    gap: 2px;
+    list-style: none;
+    margin: 2px 0 4px 19px;
+    padding: 0 0 0 8px;
+    border-left: 1px solid var(--divider);
+}
+.escr-global-nav .escr-nav-submenu .escr-globalnav-icon,
+.escr-global-nav .escr-nav-submenu .escr-sidebar-button {
+    height: 32px;
+    padding: 0 10px;
+    font-size: 14px;
+}
+
+/* contextual group: divider + page actions */
+.escr-global-nav .escr-contextual-navgroup {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--divider);
+}
+
+/* top bar */
+.escr-global-nav .escr-topbar {
+    position: fixed;
+    top: 0;
+    left: var(--nav-width);
+    right: 0;
+    height: var(--topbar-height);
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    /* crumbs line up with the page content; avatar 20px from the right edge
+       (+2px button padding), like the logo on the left */
+    padding: 0 18px 0 32px;
+    background: var(--background);
+    z-index: var(--global-nav-z);
+}
+.escr-global-nav .escr-topbar .escr-breadcrumbs {
+    margin: 0;
+    min-width: 0;
+}
+/* theme switch and profile menu sit at the right end */
+.escr-global-nav .escr-topbar .escr-theme-switch {
+    margin-left: auto;
+}
+/* page area starts right of the nav and below the top bar */
+body.escr-body > main {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    margin-left: var(--nav-width);
+    margin-top: var(--topbar-height);
+    height: calc(100vh - var(--topbar-height));
+    max-height: calc(100vh - var(--topbar-height));
+}
+body.escr-body > main .escr-page-container {
+    height: 100%;
+    max-height: 100%;
+}
+
+.escr-global-nav .escr-profile-button {
+    display: flex;
+    padding: 2px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+}
+.escr-global-nav .escr-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: var(--selected-background);
+    color: var(--primary);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    transition: box-shadow 0.15s ease;
+}
+.escr-global-nav .escr-profile-button:hover .escr-avatar,
+.escr-global-nav .escr-profile-button[data-popper-shown] .escr-avatar,
+.escr-global-nav .escr-profile-button--active .escr-avatar {
+    box-shadow: 0 0 0 2px var(--primary-focus);
+}
+.escr-global-nav .escr-profile-button:focus-visible {
+    outline: 2px solid var(--primary-focus);
+    outline-offset: 1px;
+}
+.escr-global-nav .escr-profile-signin {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 8px;
+    color: var(--text1);
+    fill: var(--text1);
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+}
+.escr-global-nav .escr-profile-signin svg {
+    width: 18px;
+    height: 18px;
+}
+.escr-global-nav .escr-profile-signin:hover {
+    background-color: var(--nav-hover);
+    text-decoration: none;
+}
+
+.v-popper--theme-vertical-menu .v-popper__inner:has(.escr-tasks-menu) {
+    top: 0;
+}
+
+/* collapse toggle at the foot of the navigation */
+.escr-global-nav .escr-nav-collapse {
+    flex: none;
+    margin-top: 8px;
+}
+
+/*
+ * Collapsed navigation: a rail of icons. Labels stay for screen readers only,
+ * a tooltip names each icon, and groups (Tasks, page actions) open as menus
+ * beside the rail (see GlobalNavigation.vue and Sidebar.vue).
+ */
+html.escr-nav-collapsed {
+    --nav-width: 64px;
+}
+.escr-nav-collapsed .escr-global-nav .escr-nav-logo {
+    justify-content: center;
+    padding-left: 0;
+}
+.escr-nav-collapsed .escr-global-nav :is(.escr-globalnav-icon, .escr-sidebar-button) {
+    justify-content: center;
+    gap: 0;
+    padding: 0;
+}
+.escr-nav-collapsed .escr-global-nav :is(.escr-globalnav-icon, .escr-sidebar-button) > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+.escr-nav-collapsed .escr-global-nav .escr-nav-chevron,
+.escr-nav-collapsed .escr-global-nav .escr-sidebar-title {
+    display: none;
+}
+/* the open group's menu keeps its row highlighted, like a hovered row */
+.escr-global-nav .v-popper--shown > :is(.escr-globalnav-icon, .escr-sidebar-button) {
+    background-color: var(--nav-hover);
     color: var(--text1);
     fill: var(--text1);
 }
-.escr-global-nav .escr-globalnav-icon:active,
-.escr-global-nav .escr-globalnav-icon-active {
-    color: var(--tag-text-ondark);
-    fill: var(--tag-text-ondark);
-    background-color: var(--secondary);
+
+/* menus beside the collapsed rail: a small heading naming the group */
+.escr-nav-flyout-title {
+    margin: 0;
+    padding: 6px 10px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text3);
 }
-.escr-global-nav input#escr-lightdark-switcher {
-    display: none;
-}
-.escr-global-nav input#escr-lightdark-switcher + label {
-    display: flex;
-    cursor: pointer;
-    padding: 0;
-    margin: 28px 0 16px;
-    background-color: var(--secondary-hover);
-    width: 42px;
-    height: 24px;
-    border-radius: 16px;
-}
-.escr-global-nav input#escr-lightdark-switcher:checked + label {
-    background-color: #d3d3d3;
-}
-.v-popper--theme-vertical-menu .v-popper__inner:has(.escr-tasks-menu) {
-    top: 24px;
+.escr-nav-flyout {
+    min-width: 220px;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
 }

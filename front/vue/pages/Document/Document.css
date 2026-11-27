@@ -1,277 +1,273 @@
-.escr-body #main.escr-vue-enabled .escr-document-dashboard .escr-page {
-    padding-right: 0;
-}
+/*
+ * Document dashboard. On the left, flat like the project page: the detail
+ * header (title, actions, tags, details: see Common/DetailHeader.css), then
+ * the recent images and tasks as lists. On the right, the statistics of the
+ * selected transcription as a bento: number tiles, then the characters and
+ * ontology cards.
+ */
 .escr-document-dashboard .escr-breadcrumbs {
     position: relative;
     max-height: 19px;
 }
-.escr-document-dashboard .escr-grid-container {
+.escr-document {
     display: grid;
-    gap: 24px;
-    grid-template-columns: 56% 44%;
-    min-height: calc(100vh - 51px);
+    grid-template-columns: minmax(0, 1fr) minmax(400px, 40%);
+    gap: 48px;
+    align-items: start;
+    padding-bottom: 32px;
 }
-.escr-document-dashboard .escr-doc-left-grid,
-.escr-document-dashboard .escr-doc-right-grid {
-    display: grid;
-    gap: 24px;
-    align-items: stretch;
-    min-height: 100%;
-    max-height: calc(100vh - 75px);
-}
-@media (max-width: 1200px),
-(max-height: 680px) {
-    .escr-document-dashboard {
-        height: max(768px, calc(100vh - 16px));
-    }
-    .escr-document-dashboard .escr-grid-container {
-        height: max(calc(768px - 51px), calc(100% - 51px));
-    }
-    .escr-document-dashboard .escr-doc-left-grid,
-    .escr-document-dashboard .escr-doc-right-grid {
-        max-height: calc(100% - 75px);
-    }
-}
-
-/**
- * left side grid
- */
-.escr-document-dashboard .escr-doc-left-grid {
-    grid-template-columns: 2fr 3fr;
-    grid-template-rows: 0.5fr 0.7fr 0.7fr 1fr 1fr;
-    padding-bottom: 24px;
-    align-items: stretch;
-    grid-template-areas:
-        "header header"
-        "tags tasks"
-        "tags tasks"
-        "images images"
-        "images images";
-}
-/* header and metadata */
-.escr-document-dashboard .escr-document-details {
-    grid-area: header;
-}
-.escr-document-dashboard .escr-document-details .escr-card-header h1 {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
-    overflow: hidden;
-}
-.escr-document-dashboard .escr-document-metadata {
-    color: var(--text2);
-    font-weight: 400;
-    font-size: 14px;
-}
-/* tags */
-.escr-document-dashboard .escr-document-tags {
-    grid-area: tags;
-    padding-right: 0;
-}
-.escr-document-dashboard .escr-document-tags .escr-card-header,
-.escr-document-dashboard .escr-document-tags .escr-loader-container {
-    padding-right: 1rem;
-}
-.escr-document-dashboard .escr-tag-group-wrapped {
-    overflow-y: auto;
-    max-height: calc(100% - 32px);
-    padding-right: 1rem;
-}
-.escr-document-dashboard .escr-tag-group-wrapped .escr-tag {
-    margin-bottom: 8px;
-}
-/* tasks */
-.escr-document-dashboard .escr-document-tasks {
-    grid-area: tasks;
-    overflow: hidden;
+.escr-document-main {
     display: flex;
     flex-flow: column;
+    gap: 32px;
+    min-width: 0;
 }
-.escr-document-dashboard .escr-document-tasks .escr-card-header {
-    margin-bottom: 0;
-}
-.escr-document-dashboard .escr-document-tasks .tasks-container {
+
+/* ---- lists ---- */
+.escr-document-images .table-container {
+    margin: 0;
+    padding: 0;
     overflow: auto;
+}
+/* small previews: the rows stay the tables' height */
+.escr-document-images .escr-table tr td.with-img img {
+    width: 32px;
+    height: 32px;
+    margin-right: 12px;
+    border-radius: 6px;
+    object-fit: cover;
+}
+/* tasks: rows like the tables' */
+.escr-document-tasks ul {
     margin: 0;
     padding: 0;
-    height: 100%;
-    max-height: calc(100% - 28px);
-    flex: 1 0 auto;
-}
-.escr-document-dashboard .escr-document-tasks ul {
-    display: grid;
-    grid-template-rows: 1fr 1fr 1fr;
     list-style: none;
-    padding: 0;
-    margin: 0;
-    height: calc(100% - 16px);
-    overflow-x: auto;
 }
-.escr-document-dashboard .escr-document-tasks ul > li {
-    padding-left: 16px;
-    padding-right: 16px;
+.escr-document-tasks ul > li {
     display: flex;
     align-items: center;
-    border-bottom: 1px solid var(--background);
+    gap: 12px;
+    min-height: 48px;
+    padding: 6px 12px;
+    border-radius: 8px;
 }
-.escr-document-dashboard .escr-document-tasks ul > li:last-of-type {
-    border-bottom: none;
+.escr-document-tasks ul > li:nth-child(odd) {
+    background-color: var(--table-stripe);
 }
-.escr-document-dashboard .escr-spinner {
-    width: 24px;
-    height: 24px;
-    max-width: 24px;
-    max-height: 24px;
+.escr-document-tasks ul > li .escr-spinner,
+.escr-document-tasks ul > li [class^="escr-status"] {
+    display: flex;
+    flex: none;
+    width: 20px;
+    height: 20px;
 }
-.escr-document-dashboard .escr-document-tasks ul > li .escr-spinner,
-.escr-document-dashboard .escr-document-tasks ul > li [class^="escr-status"] {
-    margin-right: 1rem;
+.escr-document-tasks .escr-spinner {
+    max-width: 20px;
+    max-height: 20px;
+}
+.escr-document-tasks ul > li [class^="escr-status"] svg {
+    width: 20px;
+    height: 20px;
 }
 .escr-document-tasks ul > li .escr-status--complete {
-    color: var(--secondary);
+    color: var(--status-success);
+    fill: var(--status-success);
 }
 .escr-document-tasks ul > li .escr-status--warning {
     color: var(--at-risk);
+    fill: var(--at-risk);
 }
 .escr-document-tasks ul > li .escr-status--error {
     color: var(--alert);
+    fill: var(--alert);
 }
 .escr-document-tasks ul > li .escr-status--inactive {
-    color: var(--background2);
+    color: var(--text3);
+    fill: var(--text3);
+}
+.escr-document-tasks ul > li .meta {
+    display: grid;
+    flex: 1 1 auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 2px 16px;
+    min-width: 0;
+    color: var(--text2);
+    font-size: 12.5px;
+}
+.escr-document-tasks ul > li .meta .task-label {
+    grid-column: 1 / 3;
+    color: var(--text1);
+    font-size: 13.5px;
+    font-weight: 600;
 }
 .escr-document-tasks ul > li .meta .timestamp {
     text-align: right;
 }
-.escr-document-dashboard .escr-document-tasks ul > li .meta {
-    max-width: calc(100% - 76px);
-    flex: 1 0 auto;
-    display: grid;
-    grid-template-columns: 1fr 1.5fr;
-    font-weight: 400;
-    font-size: 12px;
-    color: var(--text2);
-}
-.escr-document-dashboard .escr-document-tasks ul > li .meta .task-label {
-    grid-column: 1 / 3;
-    font-weight: 600;
-    font-size: 14px;
-    color: var(--text1);
-}
-.escr-document-dashboard .escr-document-tasks ul > li button {
-    margin-left: 4px;
-}
-.escr-document-dashboard .escr-document-tasks ul > li button > svg {
+.escr-document-tasks ul > li button > svg {
     fill: var(--text3);
 }
-/* images list */
-.escr-document-dashboard .escr-document-images {
-    grid-area: images;
-    overflow: hidden;
+
+/* ---- statistics ---- */
+.escr-document-stats {
     display: flex;
     flex-flow: column;
-    padding-bottom: 0;
+    gap: 12px;
+    min-width: 0;
 }
-.escr-document-dashboard .escr-document-images .table-container {
-    overflow: auto;
+/* on the title's line, as large as the title; the tiles then start on the
+   tags' line (the header's 12px gap) */
+.escr-document-stats-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 33px;
+}
+.escr-document-stats-header h2 {
     margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 33px;
+}
+.escr-document-stats-view {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 600;
+}
+/* number tiles */
+.escr-stat-tiles {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin: 0;
+}
+.escr-stat-tile {
+    min-width: 0;
+    padding: 14px 16px;
+    border: 1px solid var(--divider);
+    border-radius: 12px;
+    background-color: var(--background1);
+}
+.escr-stat-tile dt {
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 16px;
+}
+.escr-stat-tile dd {
+    margin: 6px 0 0;
+    overflow: hidden;
+    color: var(--text1);
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 30px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.escr-stat-tile dd.escr-stat-tile-empty {
+    color: var(--text3);
+}
+/* the cards: same surface as the tiles, one padding all round; their text
+   lines up with their titles; long lists scroll inside */
+.escr-document .escr-document-stats .escr-card {
+    padding: 16px 20px 20px;
+    border: 1px solid var(--divider);
+    border-radius: 12px;
+    box-shadow: none;
+}
+.escr-document .escr-document-stats .escr-card .escr-card-header {
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 0 0 12px;
     padding: 0;
 }
-
-/**
- * right side grid
- */
-.escr-document-dashboard .escr-doc-right-grid {
-    background-color: var(--background3);
-    margin-top: -51px;
-    padding: 51px 48px 24px 24px;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: 10% 116px 12% 11% auto 11% auto;
-    grid-template-areas:
-        "header header header"
-        "images lines characters"
-        "status status status"
-        "chars chars chars"
-        "chars chars chars"
-        "ontology ontology ontology"
-        "ontology ontology ontology";
-    min-height: calc(100% + 51px);
+.escr-document-stats .escr-card .escr-card-header h2 {
+    font-size: 16px;
 }
-/* right side header and select element */
-.escr-document-dashboard .doc-stats-header {
-    grid-area: header;
+.escr-document-stats .escr-card .escr-card-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
 }
-.escr-document-dashboard .doc-stats-header h2 {
-    margin-top: 0;
-}
-.escr-document-dashboard .doc-stats-header div {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-.escr-document-dashboard .doc-stats-header div h3 {
-    font-weight: 700;
+.escr-document .escr-document-characters dl {
+    max-height: 200px;
     margin: 0;
+    padding: 0;
+    overflow: auto;
 }
-/* common stat styles */
-.escr-document-dashboard .escr-stat {
-    font-size: 24px;
-    font-weight: 400;
+/* the table's rows reach into the card's padding, so the cells' text starts
+   on the title's line */
+.escr-document .escr-document-ontology .escr-ontology-table-container {
+    max-height: 320px;
+    margin: 0 -12px -8px;
 }
-.escr-document-dashboard [class$="-stats"] .escr-card-header {
-    margin-bottom: 14px;
+.escr-document .escr-document-ontology .escr-table :is(th, td):first-child {
+    padding-left: 12px;
 }
-.escr-document-dashboard [class$="-stats"] h2 {
-    line-height: 20px;
-    max-width: 70%;
+/* the ontology card's header: title and its actions on one row, the category
+   switch on its own row under them */
+.escr-document-ontology .escr-card-header .escr-card-actions {
+    display: contents;
 }
-/* total images */
-.escr-document-dashboard .images-stats {
-    grid-area: images;
+.escr-document-ontology .escr-card-header h2 {
+    margin-right: auto;
 }
-/* total lines */
-.escr-document-dashboard .lines-stats {
-    grid-area: lines;
+.escr-document-ontology .escr-card-header .escr-segmented-button-group {
+    flex: 1 1 100%;
+    order: 10;
 }
-/* total chars */
-.escr-document-dashboard .chars-stats {
-    grid-area: characters;
-}
-/* transcription status */
-.escr-document-dashboard .transcription-status {
-    grid-area: status;
-}
-.escr-document-dashboard .transcription-status {
-    display: flex;
-    flex-flow: row nowrap;
-    justify-content: space-between;
-    align-items: center;
-}
-.transcription-status dl {
-    display: flex;
-    flex-flow: column-reverse;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    margin: 0;
-}
-.transcription-status dl dt {
+.escr-document-ontology .escr-ontology-overview-link {
     color: var(--text2);
-    font-weight: 400;
-    font-size: 12px;
+    font-size: 13px;
+    text-decoration: underline;
+    text-decoration-color: var(--divider);
+    text-underline-offset: 3px;
+}
+.escr-document-ontology .escr-ontology-overview-link:hover {
+    color: var(--primary);
+    text-decoration-color: currentColor;
+}
+/* switches (characters order, ontology category): a quiet track with the
+   current choice raised, instead of solid dark buttons */
+.escr-document .escr-document-stats .escr-segmented-button-group {
+    gap: 2px;
+    padding: 2px;
+    border-radius: 8px;
+    background-color: var(--nav-hover);
+}
+.escr-document .escr-document-stats .escr-segmented-button-group > div {
+    height: 28px;
+    max-height: 28px;
+}
+.escr-document .escr-document-stats .escr-segmented-button-group > div > label {
+    min-height: 28px;
+    height: 28px;
     margin: 0;
+    padding: 0 10px;
+    border-radius: 6px;
+    font-size: 12.5px;
 }
-.transcription-status dl dd {
-    font-weight: 400;
-    font-size: 32px;
-    margin: 0;
+.escr-document .escr-document-stats .escr-segmented-button-group input:not(:checked) + label {
+    background-color: transparent;
+    color: var(--text2);
+    font-weight: 500;
 }
-/* characters table */
-.escr-document-dashboard .escr-document-characters {
-    grid-area: chars;
+.escr-document .escr-document-stats .escr-segmented-button-group input:not(:checked) + label:hover {
+    color: var(--text1);
 }
-/* ontology table */
-.escr-document-dashboard .escr-document-ontology {
-    grid-area: ontology;
+.escr-document .escr-document-stats .escr-segmented-button-group input:checked + label {
+    background-color: var(--background1);
+    color: var(--text1);
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 12%);
+}
+.escr-document .escr-document-stats .escr-segmented-button-group input:focus + label {
+    box-shadow: 0 0 0 2px var(--primary-focus);
+}
+.escr-document .escr-document-stats .escr-segmented-button-group input:checked:focus + label {
+    box-shadow: 0 1px 2px rgb(0 0 0 / 12%), 0 0 0 2px var(--primary-focus);
 }

@@ -3,15 +3,36 @@
         class="escr-project-dashboard"
         :breadcrumbs="breadcrumbs"
         :sidebar-actions="sidebarActions"
+        sidebar-title="Project"
         :loading="loading"
     >
         <template #page-content>
-            <div class="escr-grid-container">
-                <!-- Project metadata header -->
-                <div class="escr-card escr-card-padding escr-project-details">
-                    <div class="escr-card-header">
+            <div class="escr-project">
+                <!-- title, project actions and what the project is -->
+                <header class="escr-detail-header">
+                    <div class="escr-detail-title">
                         <h1>{{ projectName }}</h1>
-                        <div class="escr-card-actions">
+                        <div class="escr-detail-actions">
+                            <EscrButton
+                                label="Share"
+                                color="outline-text"
+                                :on-click="openShareModal"
+                                :disabled="loading"
+                            >
+                                <template #button-icon>
+                                    <ShareIcon />
+                                </template>
+                            </EscrButton>
+                            <EscrButton
+                                label="Edit"
+                                color="outline-text"
+                                :on-click="openEditModal"
+                                :disabled="loading"
+                            >
+                                <template #button-icon>
+                                    <EditIcon />
+                                </template>
+                            </EscrButton>
                             <VerticalMenu
                                 :is-open="projectMenuOpen"
                                 :close-menu="closeProjectMenu"
@@ -19,33 +40,83 @@
                                 :disabled="loading"
                                 :items="projectMenuItems"
                             />
-                            <EditProjectModal
-                                v-if="editModalOpen"
-                                :disabled="loading"
-                                :fonts="fonts"
-                                :on-cancel="closeEditModal"
-                                :on-create-tag="createNewProjectTag"
-                                :on-save="saveProject"
-                                :tags="allProjectTags"
-                            />
                         </div>
                     </div>
-                    <a
-                        v-if="guidelines"
-                        :href="guidelines"
-                        class="escr-project-guidelines"
-                    >
-                        Project Guidelines
-                    </a>
                     <EscrTags
-                        v-if="tags"
+                        v-if="tags && tags.length"
+                        class="escr-detail-tags"
                         :tags="tags"
+                        :wrap="true"
                     />
-                </div>
+                    <!-- what the project is, grouped: people, content, dates -->
+                    <dl class="escr-details">
+                        <div class="escr-detail-group">
+                            <div v-if="owner">
+                                <dt>Owner</dt>
+                                <dd>{{ owner }}</dd>
+                            </div>
+                            <div>
+                                <dt>Shared with</dt>
+                                <dd>
+                                    <button
+                                        type="button"
+                                        class="escr-detail-link"
+                                        :disabled="loading"
+                                        @click="openShareModal"
+                                    >
+                                        {{ sharing }}
+                                    </button>
+                                </dd>
+                            </div>
+                        </div>
+                        <div class="escr-detail-group">
+                            <div>
+                                <dt>Default ontology</dt>
+                                <dd>{{ ontologySummary }}</dd>
+                            </div>
+                            <div>
+                                <dt>Guidelines</dt>
+                                <dd v-if="guidelines">
+                                    <a
+                                        :href="guidelines"
+                                        class="escr-detail-link"
+                                        target="_blank"
+                                        rel="noopener"
+                                    >
+                                        {{ guidelinesLabel }}
+                                        <ExternalIcon />
+                                    </a>
+                                </dd>
+                                <dd
+                                    v-else
+                                    class="escr-detail-empty"
+                                >
+                                    None
+                                </dd>
+                            </div>
+                        </div>
+                        <div class="escr-detail-group">
+                            <div v-if="createdAt">
+                                <dt>Created</dt>
+                                <dd>{{ formatDate(createdAt) }}</dd>
+                            </div>
+                            <div v-if="updatedAt">
+                                <dt>Updated</dt>
+                                <dd>{{ formatDate(updatedAt) }}</dd>
+                            </div>
+                        </div>
+                    </dl>
+                </header>
                 <!-- Documents list -->
-                <div class="escr-card escr-card-table escr-documents-list">
+                <section class="escr-detail-section escr-documents-list">
                     <div class="escr-card-header">
-                        <h2>Documents</h2>
+                        <h2>
+                            Documents
+                            <span
+                                v-if="documentsCount !== null"
+                                class="escr-count"
+                            >{{ documentsCount }}</span>
+                        </h2>
                         <div class="escr-card-actions">
                             <FilterSet
                                 :disabled="loading"
@@ -54,7 +125,7 @@
                                 search-placeholder="Search documents..."
                             />
                             <EscrButton
-                                label="Create New"
+                                label="New document"
                                 :on-click="openCreateDocumentModal"
                                 :disabled="loading || createDocumentModalOpen"
                             >
@@ -62,17 +133,6 @@
                                     <PlusIcon />
                                 </template>
                             </EscrButton>
-                            <EditDocumentModal
-                                v-if="createDocumentModalOpen"
-                                :disabled="loading"
-                                :fonts="fonts"
-                                :new-document="true"
-                                :on-cancel="closeCreateDocumentModal"
-                                :on-create-tag="createNewDocumentTag"
-                                :on-save="createNewDocument"
-                                :scripts="scripts"
-                                :tags="documentTags"
-                            />
                         </div>
                     </div>
                     <div
@@ -129,9 +189,47 @@
                         :loading="loading"
                         no-data-message="There are no documents to display."
                     />
-                </div>
-                <!-- Default project ontology -->
-                <ProjectOntologyCard :disabled="loading" />
+                </section>
+                <!-- ontology import (from the project menu) -->
+                <input
+                    ref="ontologyInput"
+                    type="file"
+                    accept=".json,.yaml,.yml"
+                    class="sr-only"
+                    tabindex="-1"
+                    aria-hidden="true"
+                    @change="onOntologyFileChange"
+                >
+                <EditProjectModal
+                    v-if="editModalOpen"
+                    :disabled="loading"
+                    :fonts="fonts"
+                    :on-cancel="closeEditModal"
+                    :on-create-tag="createNewProjectTag"
+                    :on-save="saveProject"
+                    :tags="allProjectTags"
+                />
+                <EditDocumentModal
+                    v-if="createDocumentModalOpen"
+                    :disabled="loading"
+                    :fonts="fonts"
+                    :new-document="true"
+                    :on-cancel="closeCreateDocumentModal"
+                    :on-create-tag="createNewDocumentTag"
+                    :on-save="createNewDocument"
+                    :scripts="scripts"
+                    :tags="documentTags"
+                />
+                <ConfirmModal
+                    v-if="clearOntologyModalOpen"
+                    body-text="Are you sure you want to clear this project's default ontology?"
+                    confirm-verb="Clear"
+                    title="Clear Default Ontology"
+                    :cannot-undo="true"
+                    :disabled="loading"
+                    :on-cancel="() => (clearOntologyModalOpen = false)"
+                    :on-confirm="onConfirmClearOntology"
+                />
                 <!-- delete project modal -->
                 <ConfirmModal
                     v-if="deleteModalOpen"
@@ -170,6 +268,9 @@
     </EscrPage>
 </template>
 <script>
+import {
+    Download, Eraser, ExternalLink, Pencil, Trash2, Upload, UserPlus,
+} from "lucide";
 import { mapActions, mapState } from "vuex";
 import ConfirmModal from "../../components/ConfirmModal/ConfirmModal.vue";
 import EditDocumentModal from "../../components/EditDocumentModal/EditDocumentModal.vue";
@@ -181,43 +282,47 @@ import EscrTable from "../../components/Table/Table.vue";
 import EscrTags from "../../components/Tags/Tags.vue";
 import FilterSet from "../../components/FilterSet/FilterSet.vue";
 import ImagesIcon from "../../components/Icons/ImagesIcon/ImagesIcon.vue";
-import PencilIcon from "../../components/Icons/PencilIcon/PencilIcon.vue";
 import PeopleIcon from "../../components/Icons/PeopleIcon/PeopleIcon.vue";
 import PlusIcon from "../../components/Icons/PlusIcon/PlusIcon.vue";
-import ProjectOntologyCard from "../../components/ProjectOntologyCard/ProjectOntologyCard.vue";
 import SearchIcon from "../../components/Icons/SearchIcon/SearchIcon.vue";
 import SearchPanel from "../../components/SearchPanel/SearchPanel.vue";
 import ShareModal from "../../components/SharePanel/ShareModal.vue";
 import SharePanel from "../../components/SharePanel/SharePanel.vue";
 import TrashIcon from "../../components/Icons/TrashIcon/TrashIcon.vue";
 import VerticalMenu from "../../components/VerticalMenu/VerticalMenu.vue";
+import lucideIcon from "../../components/Icons/Lucide/lucideIcon";
 import "../../components/Common/Card.css"
+import "../../components/Common/DetailHeader.css";
 import "./Project.css";
+
+const ShareIcon = lucideIcon(UserPlus);
+const EditIcon = lucideIcon(Pencil);
+const ExternalIcon = lucideIcon(ExternalLink);
+const ImportIcon = lucideIcon(Upload);
+const ExportIcon = lucideIcon(Download);
+const ClearIcon = lucideIcon(Eraser);
+const DeleteIcon = lucideIcon(Trash2);
+
+const plural = (count, word) => `${count} ${word}${count === 1 ? "" : "s"}`;
 
 export default {
     name: "EscrProjectDashboard",
     components: {
         ConfirmModal,
         EditDocumentModal,
+        EditIcon,
         EditProjectModal,
         EscrButton,
         EscrLoader,
         EscrPage,
         EscrTable,
         EscrTags,
+        ExternalIcon,
         FilterSet,
         ImagesIcon,
-        // eslint-disable-next-line vue/no-unused-components
-        PencilIcon,
-        // eslint-disable-next-line vue/no-unused-components
-        PeopleIcon,
         PlusIcon,
-        ProjectOntologyCard,
-        // eslint-disable-next-line vue/no-unused-components
-        SearchPanel,
+        ShareIcon,
         ShareModal,
-        // eslint-disable-next-line vue/no-unused-components
-        SharePanel,
         TrashIcon,
         VerticalMenu,
     },
@@ -237,13 +342,20 @@ export default {
             required: true,
         },
     },
+    data() {
+        return {
+            clearOntologyModalOpen: false,
+        };
+    },
     computed: {
         ...mapState({
             allProjectTags: (state) => state.projects.tags,
             createDocumentModalOpen: (state) => state.project.createDocumentModalOpen,
             deleteModalOpen: (state) => state.project.deleteModalOpen,
             deleteDocumentModalOpen: (state) => state.project.deleteDocumentModalOpen,
+            createdAt: (state) => state.project.createdAt,
             documents: (state) => state.project.documents,
+            documentsCount: (state) => state.project.documentsCount,
             documentTags: (state) => state.project.documentTags,
             documentToDelete: (state) => state.project.documentToDelete,
             editModalOpen: (state) => state.project.editModalOpen,
@@ -251,6 +363,8 @@ export default {
             guidelines: (state) => state.project.guidelines,
             loading: (state) => state.project.loading,
             nextPage: (state) => state.project.nextPage,
+            ontologyConfig: (state) => state.project.ontologyConfig,
+            owner: (state) => state.project.owner,
             projectName: (state) => state.project.name,
             projectId: (state) => state.project.id,
             projectMenuOpen: (state) => state.project.menuOpen,
@@ -260,6 +374,7 @@ export default {
             sharedWithUsers: (state) => state.project.sharedWithUsers,
             sharedWithGroups: (state) => state.project.sharedWithGroups,
             tags: (state) => state.project.tags,
+            updatedAt: (state) => state.project.updatedAt,
         }),
         /**
          * Links and titles for the breadcrumbs above the page.
@@ -276,40 +391,89 @@ export default {
         headers() {
             return [
                 { label: "Name", value: "name", sortable: true },
-                { label: "Document Tags", value: "tags", component: EscrTags },
-                { label: "# of Images", value: "parts_count", sortable: true  },
+                { label: "Tags", value: "tags", component: EscrTags },
+                { label: "Images", value: "parts_count", sortable: true },
                 {
-                    label: "Last Update",
+                    label: "Updated",
                     value: "updated_at",
                     sortable: true,
-                    format: (val) => new Date(val).toLocaleDateString(
-                        undefined,
-                        { year: "numeric", month: "long", day: "numeric" },
-                    ),
+                    format: (val) => this.formatDate(val),
                 },
-                // { label: "Default Transcription Level", value: "default_transcription_level"  },
             ];
         },
         /**
-         * Menu items for the vertical menu in the top right corner of the dashboard.
+         * Who the project is shared with, besides its owner.
+         */
+        sharing() {
+            const users = this.sharedWithUsers?.length;
+            const groups = this.sharedWithGroups?.length;
+            const parts = [];
+            if (users) parts.push(plural(users, "user"));
+            if (groups) parts.push(plural(groups, "group"));
+            return parts.length ? parts.join(", ") : "Not shared";
+        },
+        /**
+         * The guidelines link, shown by its host (the whole address if it
+         * isn't one).
+         */
+        guidelinesLabel() {
+            try {
+                return new URL(this.guidelines).host || this.guidelines;
+            } catch {
+                return this.guidelines;
+            }
+        },
+        /**
+         * What the project's default ontology holds, in a few words.
+         */
+        ontologySummary() {
+            const config = this.ontologyConfig;
+            if (!config) return "Instance defaults";
+            const counts = [
+                ["region type", config.region_types],
+                ["line type", config.line_types],
+                ["part type", config.part_types],
+                ["annotation component", config.annotation_components],
+                ["taxonomy", config.taxonomy],
+            ]
+                .filter(([, list]) => list?.length)
+                .map(([label, list]) => (label === "taxonomy"
+                    ? `${list.length} ${list.length === 1 ? "taxonomy" : "taxonomies"}`
+                    : plural(list.length, label)));
+            return counts.length ? counts.join(", ") : "Empty ontology";
+        },
+        /**
+         * The project menu: default ontology, then deleting the project.
          */
         projectMenuItems() {
             return [
                 {
-                    icon: PencilIcon,
-                    key: "edit",
-                    label: "Edit",
-                    onClick: this.openEditModal,
+                    icon: ImportIcon,
+                    key: "import-ontology",
+                    label: "Import ontology",
+                    onClick: this.onClickImportOntology,
                 },
+                ...(this.ontologyConfig
+                    ? [{
+                        icon: ExportIcon,
+                        key: "export-ontology",
+                        label: "Export ontology",
+                        onClick: this.onClickExportOntology,
+                    }, {
+                        icon: ClearIcon,
+                        key: "clear-ontology",
+                        label: "Clear ontology",
+                        onClick: this.onClickClearOntology,
+                    }]
+                    : []),
                 {
-                    icon: TrashIcon,
-                    // Add the "new-section" class if/when there is more than one item above this
-                    // class: "new-section",
+                    icon: DeleteIcon,
+                    class: "new-section",
                     key: "delete",
-                    label: "Delete Project",
+                    label: "Delete project",
                     onClick: this.openDeleteModal,
-                }
-            ]
+                },
+            ];
         },
         /**
          * Sidebar quick actions for the project dashboard.
@@ -362,6 +526,7 @@ export default {
     },
     methods: {
         ...mapActions("project", [
+            "clearOntology",
             "closeCreateDocumentModal",
             "closeDeleteModal",
             "closeDeleteDocumentModal",
@@ -373,9 +538,11 @@ export default {
             "createNewProjectTag",
             "deleteDocument",
             "deleteProject",
+            "exportOntology",
             "fetchNextPage",
             "fetchProject",
             "fetchProjectDocuments",
+            "importOntology",
             "openCreateDocumentModal",
             "openDeleteModal",
             "openDeleteDocumentModal",
@@ -401,6 +568,33 @@ export default {
                 this.addError(error);
             }
             this.setLoading(false);
+        },
+        formatDate(value) {
+            return new Date(value).toLocaleDateString(
+                undefined,
+                { year: "numeric", month: "short", day: "numeric" },
+            );
+        },
+        onClickImportOntology() {
+            this.closeProjectMenu();
+            this.$refs.ontologyInput.click();
+        },
+        async onOntologyFileChange(e) {
+            const file = e.target.files[0];
+            e.target.value = "";
+            if (file) await this.importOntology(file);
+        },
+        onClickExportOntology() {
+            this.closeProjectMenu();
+            this.exportOntology();
+        },
+        onClickClearOntology() {
+            this.closeProjectMenu();
+            this.clearOntologyModalOpen = true;
+        },
+        async onConfirmClearOntology() {
+            await this.clearOntology();
+            this.clearOntologyModalOpen = false;
         },
         navigateToImages(item) {
             if (item?.pk) {

@@ -1,101 +1,91 @@
 <template>
     <div class="escr-selected-docs-container">
+        <!-- one chip per document: opens its selected images -->
         <div class="escr-document-chips">
             <button
                 v-for="doc in groupedDocs"
                 :key="`doc-${doc.id}`"
+                type="button"
                 class="escr-doc-expand"
                 :class="{
                     active: expandedFolderId === doc.id,
                 }"
+                :aria-expanded="expandedFolderId === doc.id ? 'true' : 'false'"
                 :disabled="loadingFolderId === doc.id"
                 @click="toggleFolder(doc.id)"
             >
-                {{ doc.name }} ({{ doc.items.length }})
+                <span class="escr-doc-expand-name">{{ doc.name }}</span>
+                <span class="escr-doc-expand-count">{{ doc.items.length }}</span>
                 <div
                     v-if="loadingFolderId === doc.id"
                     class="escr-spinner"
                     role="status"
                 />
-                <ChevronUpIcon v-if="expandedFolderId === doc.id" />
-                <ChevronDownLargeIcon v-else />
             </button>
         </div>
 
-        <div
-            v-if="expandedFolderId !== null"
-            class="escr-folders-wrapper"
-        >
+        <div class="escr-folder-content">
+            <p
+                v-if="expandedFolderId === null"
+                class="escr-folder-empty"
+            >
+                Pick a document above to review its selected images.
+            </p>
             <div
                 v-for="doc in groupedDocs"
                 v-show="expandedFolderId === doc.id"
                 :key="`folder-${doc.id}`"
-                class="escr-folder-group"
+                class="escr-selected-parts-grid"
             >
                 <div
-                    class="escr-folder-tab"
-                    @click="toggleFolder(doc.id)"
+                    v-for="part in doc.items"
+                    :key="part.document_part"
+                    class="escr-selected-part-card"
                 >
-                    <span><strong>{{ doc.name }}</strong> ({{
-                        doc.items.length
-                    }}
-                        parts)</span>
-                    <XIcon />
-                </div>
-
-                <div class="escr-folder-content">
-                    <div class="escr-selected-parts-grid">
-                        <div
-                            v-for="part in doc.items"
-                            :key="part.document_part"
-                            class="escr-selected-part-card"
+                    <button
+                        type="button"
+                        class="escr-remove-part-btn"
+                        title="Remove from the selection"
+                        aria-label="Remove from the selection"
+                        @click="removeSelectedPart(part.document_part)"
+                    >
+                        <XIcon />
+                    </button>
+                    <div class="escr-part-thumbnail">
+                        <img
+                            :src="getThumbnailUrl(part)"
+                            alt=""
+                            loading="lazy"
                         >
-                            <button
-                                class="escr-remove-part-btn"
-                                aria-label="Remove part"
-                                @click="removeSelectedPart(part.document_part)"
+                    </div>
+                    <span class="escr-part-number">{{ part.part_order + 1 }}</span>
+                    <!-- filename with tooltip for overflow -->
+                    <VDropdown
+                        placement="bottom"
+                        :triggers="['hover']"
+                        theme="escr-tooltip-small"
+                        class="filename"
+                    >
+                        <span>{{ part.part_name || `Page ${part.document_part}` }}</span>
+                        <template #popper>
+                            {{ part.part_name || `Page ${part.document_part}` }}
+                        </template>
+                    </VDropdown>
+                    <div class="escr-part-actions">
+                        <select
+                            class="escr-transcription-select"
+                            aria-label="Transcription to train on"
+                            :value="getPartLayerId(part, doc)"
+                            @change="(e) => updateTranscription(part, e.target.value)"
+                        >
+                            <option
+                                v-for="opt in doc.baseTransOpts"
+                                :key="opt.value"
+                                :value="opt.value"
                             >
-                                &times;
-                            </button>
-                            <div class="escr-part-thumbnail">
-                                <img
-                                    :src="getThumbnailUrl(part)"
-                                    alt="thumbnail"
-                                    loading="lazy"
-                                >
-                            </div>
-                            <!-- filename with tooltip for overflow -->
-                            <VDropdown
-                                placement="bottom"
-                                :triggers="['hover']"
-                                theme="escr-tooltip-small"
-                                class="filename"
-                            >
-                                <span>
-                                    {{ part.part_order + 1 }}
-                                    &ndash;
-                                    {{ part.part_name || `Page ${part.document_part}` }}
-                                </span>
-                                <template #popper>
-                                    {{ part.part_name || `Page ${part.document_part}` }}
-                                </template>
-                            </VDropdown>
-                            <div class="escr-part-actions">
-                                <select
-                                    class="escr-transcription-select"
-                                    :value="getPartLayerId(part, doc)"
-                                    @change="(e) => updateTranscription(part, e.target.value)"
-                                >
-                                    <option
-                                        v-for="opt in doc.baseTransOpts"
-                                        :key="opt.value"
-                                        :value="opt.value"
-                                    >
-                                        {{ opt.label }}
-                                    </option>
-                                </select>
-                            </div>
-                        </div>
+                                {{ opt.label }}
+                            </option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -106,16 +96,15 @@
 <script>
 import { mapState, mapActions } from "vuex";
 import { Dropdown as VDropdown } from "floating-vue";
-import ChevronDownLargeIcon from "../Icons/ChevronDownLargeIcon/ChevronDownLargeIcon.vue";
-import ChevronUpIcon from "../Icons/ChevronUpIcon/ChevronUpIcon.vue";
-import XIcon from "../Icons/XIcon/XIcon.vue";
+import { X } from "lucide";
+import lucideIcon from "../Icons/Lucide/lucideIcon";
 import "./SelectedDocuments.css";
+
+const XIcon = lucideIcon(X);
 
 export default {
     name: "SelectedDocuments",
     components: {
-        ChevronDownLargeIcon,
-        ChevronUpIcon,
         XIcon,
         VDropdown,
     },

@@ -1,0 +1,150 @@
+/*
+ * Custom palette: minimal greys to black, blue-leaning purple accent.
+ *
+ * Only redefines the design tokens declared in vue/index.css, so every Vue
+ * component picks it up without being touched.
+ *
+ * Scope: html:has(#main.escr-vue-enabled) limits it to the Vue UI (users
+ * without legacy_mode); legacy mode is untouched. The #id inside :has() also
+ * gives these rules a higher specificity than the stock :root / .light-mode /
+ * .dark-mode blocks, so they win no matter which bundle's CSS loads last.
+ *
+ * Accent hue: 250deg (indigo-violet).
+ */
+
+/* ---------- shared by both modes ---------- */
+html:has(#main.escr-vue-enabled) {
+    --button-text: #ffffff;
+
+    /* status: in-progress follows the accent, the rest stay semantic */
+    --initiated: #d4a72c;
+    --completed: #2f9e5b;
+
+    --drop-shadow: rgb(9 9 11 / 12%);
+    --drag-overlay: rgb(9 9 11 / 30%);
+}
+
+/* ---------- light ---------- */
+html.light-mode:has(#main.escr-vue-enabled) {
+    /* accent */
+    --primary: #5a41d8;
+    --primary-dark: #472bd4;
+    --primary-darker: #3d24b8;
+    --primary-focus: rgb(90 65 216 / 40%);
+
+    /* graphite, for neutral actions */
+    --secondary: #27272a;
+    --secondary-dark: #18181b;
+    --secondary-darker: #09090b;
+    --secondary-focus: rgb(39 39 42 / 30%);
+    --secondary-hover: rgb(39 39 42 / 8%);
+
+    /* mid grey */
+    --tertiary: #52525b;
+    --tertiary-dark: #3f3f46;
+    --tertiary-darker: #27272a;
+    --tertiary-focus: rgb(82 82 91 / 35%);
+
+    --in-progress: #5a41d8;
+
+    /* surfaces: soft steps, separated by hairlines rather than shadows */
+    --background: #f7f7f8;
+    --background1: #ffffff;
+    --background2: #f0f0f2;
+    --background2-dark: #e4e4e7;
+    --background2-darker: #d4d4d8;
+    --background2-focus: rgb(161 161 170 / 35%);
+    --background3: #ececef;
+    --selected-background: #efecfd;
+    --modal-backdrop: rgb(9 9 11 / 40%);
+    --divider: #e8e8eb;
+
+    /* editor stages: the image sits a step darker than the page, the text on paper */
+    --stage-image: #ededf0;
+    --stage-text: #ffffff;             /* the paper */
+    --stage-text-ink: #18181b;         /* its text */
+    --stage-text-muted: #a1a1aa;       /* line numbers */
+    --stage-text-rule: #d4d4d8;        /* outlines of untranscribed lines */
+    --stage-text-baseline: #5a41d8;    /* baselines of untranscribed lines */
+    --stage-text-selected: #efecfd;    /* the line being edited */
+
+    /* navigation states */
+    --nav-hover: rgb(24 24 27 / 4%);
+    --nav-active: rgb(24 24 27 / 7%);
+    --table-stripe: rgb(24 24 27 / 2.5%);
+    --table-hover: rgb(24 24 27 / 5.5%);
+    --status-success: #15803d;
+
+    /* text */
+    --text1: #18181b;
+    --text2: #5f5f68;
+    --text3: #a1a1aa;
+
+    /* info badges / banners */
+    --foreground-secondary: #2c188b;
+    --background-secondary: #ebe8fc;
+
+    --line-ordering-border: rgb(9 9 11 / 12%);
+    --line-ordering-selected: rgb(90 65 216 / 16%);
+}
+
+/* ---------- dark ---------- */
+html.dark-mode:has(#main.escr-vue-enabled) {
+    /* accent: lighter, so it reads as text on near-black and still carries white text */
+    --primary: #7a64df;
+    --primary-dark: #6a53dc;
+    --primary-darker: #5d45d6;
+    --primary-focus: rgb(122 100 223 / 45%);
+
+    --secondary: #76767f;
+    --secondary-dark: #64646c;
+    --secondary-darker: #52525b;
+    --secondary-focus: rgb(161 161 170 / 30%);
+    --secondary-hover: rgb(250 250 250 / 6%);
+
+    --tertiary: #52525b;
+    --tertiary-dark: #3f3f46;
+    --tertiary-darker: #27272a;
+    --tertiary-focus: rgb(113 113 122 / 40%);
+
+    --in-progress: #7a64df;
+
+    /* surfaces: soft steps, separated by hairlines rather than shadows */
+    --background: #0e0e10;
+    --background1: #151518;
+    --background2: #1c1c20;
+    --background2-dark: #26262b;
+    --background2-darker: #303036;
+    --background2-focus: rgb(58 58 65 / 50%);
+    --background3: #19191c;
+    --selected-background: #221c40;
+    --modal-backdrop: rgb(0 0 0 / 60%);
+    --divider: #232327;
+
+    /* editor stages: the paper is inverted, a step lighter than the image stage */
+    --stage-image: #08080a;
+    --stage-text: #1a1a1e;
+    --stage-text-ink: #ececef;
+    --stage-text-muted: #71717a;
+    --stage-text-rule: #3f3f46;
+    --stage-text-baseline: #8f7cf0;
+    --stage-text-selected: #262046;
+
+    /* navigation states */
+    --nav-hover: rgb(250 250 250 / 4%);
+    --nav-active: rgb(250 250 250 / 7%);
+    --table-stripe: rgb(250 250 250 / 2.5%);
+    --table-hover: rgb(250 250 250 / 5.5%);
+    --status-success: #4ade80;
+
+    /* text */
+    --text1: #fafafa;
+    --text2: #a1a1aa;
+    --text3: #71717a;
+
+    --foreground-secondary: #c7bef4;
+    --background-secondary: #221c40;
+
+    --line-ordering-border: rgb(250 250 250 / 10%);
+    --line-ordering-selected: rgb(122 100 223 / 22%);
+}

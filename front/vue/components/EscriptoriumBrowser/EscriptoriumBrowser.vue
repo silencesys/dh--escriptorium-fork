@@ -7,23 +7,21 @@
                     <a
                         href="#"
                         @click.prevent="fetchProjects"
-                    > Projects </a>
-                    <span class="separator italic">></span>
+                    >Projects</a>
                     <span
-                        v-if="!currentDocument"
-                        class="italic"
-                    >
-                        {{ currentProject.name }}
-                    </span>
+                        class="separator"
+                        aria-hidden="true"
+                    >/</span>
+                    <span v-if="!currentDocument">{{ currentProject.name }}</span>
                     <template v-else>
                         <a
                             href="#"
-                            class="italic"
                             @click.prevent="resetDocumentSelection"
-                        >
-                            {{ currentProject.name }}
-                        </a>
-                        <span class="separator italic">></span>
+                        >{{ currentProject.name }}</a>
+                        <span
+                            class="separator"
+                            aria-hidden="true"
+                        >/</span>
                         <span>{{ currentDocument.name }}</span>
                     </template>
                 </template>
@@ -218,7 +216,7 @@ export default {
         ...mapState("images", ["nextPage"]),
         projectHeaders() {
             return [
-                { label: "Project Name", value: "name", sortable: true, class: "col-title" },
+                { label: "Name", value: "name", sortable: true, class: "col-title" },
                 { label: "Tags", value: "tags", component: EscrTags, class: "col-tags" },
                 {
                     label: "Documents",
@@ -227,7 +225,7 @@ export default {
                     class: "col-small",
                 },
                 {
-                    label: "Updated At",
+                    label: "Updated",
                     value: "updated_at",
                     format: this.formatDate,
                     sortable: true,
@@ -237,11 +235,11 @@ export default {
         },
         documentHeaders() {
             return [
-                { label: "Document Name", value: "name", sortable: true, class: "col-title" },
+                { label: "Name", value: "name", sortable: true, class: "col-title" },
                 { label: "Tags", value: "tags", component: EscrTags, class: "col-tags" },
-                { label: "Pages", value: "parts_count", sortable: true, class: "col-small" },
+                { label: "Images", value: "parts_count", sortable: true, class: "col-small" },
                 {
-                    label: "Updated At",
+                    label: "Updated",
                     value: "updated_at",
                     format: this.formatDate,
                     class: "col-date",
@@ -431,7 +429,6 @@ export default {
             const date = new Date(d);
             return new Intl.DateTimeFormat("en-US", {
                 dateStyle: "medium",
-                timeStyle: "short",
             }).format(date);
         },
 

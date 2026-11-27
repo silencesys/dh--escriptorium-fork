@@ -1,266 +1,283 @@
+/*
+ * Images page: flat like the other pages. The title (with the count) and the
+ * Import button, one row of search, selection and view controls, the
+ * selection's actions in a light tinted bar while images are selected, then
+ * the images, which scroll on their own so the controls stay in view.
+ */
 body:has(.escr-images-page) {
     overflow-x: hidden;
 }
-
-/* special styling for images page */
-.escr-body #main.escr-vue-enabled .escr-images-page .escr-page {
-    padding: 0;
+.escr-images-page .escr-container {
+    display: flex;
+    flex-flow: column;
+    /* the viewport under the top bar and the page's top gutter */
+    height: calc(100vh - 56px - var(--page-gutter-top, 8px));
+    min-height: 0;
 }
-.escr-body #main.escr-vue-enabled .escr-images-page .escr-breadcrumbs {
-    padding: 1rem 2rem;
-    margin: 0;
-    background-color: var(--background2);
+/* the images scroll inside, so the page itself has no bottom padding */
+.escr-body #main.escr-vue-enabled .escr-images-page .escr-page {
+    padding-bottom: 0;
 }
 .escr-images-page .escr-modal .escr-text-field input {
     background-color: var(--background);
 }
-/* header */
+
+/* ---- header ---- */
 .escr-images-page .escr-images-header {
-    position: relative;
     display: flex;
-    flex-flow: row nowrap;
+    flex: none;
     align-items: center;
     justify-content: space-between;
-    background-color: var(--background2);
-    z-index: var(--editor-nav-z);
-    padding: 0 2rem 1rem;
-    box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.15);
+    gap: 16px;
+    margin-bottom: 20px;
 }
-.escr-images-header .escr-images-title {
+.escr-images-page .escr-images-title {
     display: flex;
-    flex-flow: column;
-}
-.escr-images-header .escr-images-title h3,
-.escr-images-header .escr-images-title h1 {
+    align-items: center;
+    gap: 8px;
     margin: 0;
 }
-.escr-images-page .grid-spinner.escr-loader-container {
-    margin-top: 4rem;
-}
-.escr-images-page .grid-spinner.escr-loader-container .escr-spinner,
-.images-loading-overlay .escr-spinner {
-    border-width: 8px;
-    width: 64px;
-    height: 64px;
-    max-width: 64px;
-    max-height: 64px;
-}
-.escr-images-page .escr-spinner {
-    border-color: var(--text3);
-    border-right-color: transparent;
-}
-.images-loading-overlay .escr-spinner {
-    border-color: var(--button-text);
-    border-right-color: transparent;
-}
 
-/* toolbar */
+/* ---- toolbar ---- */
 .escr-images-toolbar {
-    position: relative;
     display: flex;
-    flex-flow: row nowrap;
+    flex: none;
+    flex-flow: row wrap;
     align-items: center;
     justify-content: space-between;
-    width: 100%;
-    height: 64px;
-    background-color: var(--background2);
-    z-index: var(--editor-global-toolbar-z);
-    padding: 0 2rem;
-    box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.15);
+    gap: 8px 16px;
+    margin-bottom: 16px;
 }
-.escr-images-toolbar .escr-toolbar-left {
+.escr-images-toolbar :is(.escr-toolbar-left, .escr-toolbar-right) {
     display: flex;
     flex-flow: row nowrap;
     align-items: center;
-}
-.escr-images-toolbar .escr-toolbar-right {
-    display: flex;
-    flex-flow: row nowrap;
-    align-items: center;
+    gap: 8px;
 }
 .escr-images-toolbar .import-progress {
-    margin-left: 1rem;
     display: flex;
-    flex-flow: row nowrap;
     align-items: center;
-    gap: 0.5rem;
+    gap: 8px;
+    margin-left: 8px;
+    color: var(--text2);
+    font-size: 13px;
 }
-.escr-parts-count {
-    font-weight: 600;
-    margin-right: 2rem;
-    min-width: 85px;
+.escr-images-toolbar .import-progress .escr-loader-container {
+    flex: none;
+    padding: 0;
 }
 .escr-images-toolbar .escr-text-field {
     margin: 0;
 }
 .escr-images-toolbar .escr-text-field input {
-    background-color: var(--background1);
+    box-sizing: border-box;
+    height: 32px;
     margin: 0;
+    padding: 0 10px;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background-color: var(--background1);
+    font-size: 13px;
 }
 .escr-images-toolbar .escr-text-field.search-text-field input {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
+    width: 220px;
 }
-.escr-images-toolbar .escr-text-field.search-text-field + .escr-button {
-    height: 36px;
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
+.escr-images-toolbar .escr-text-field.range-text-field input {
+    width: 160px;
 }
-.escr-images-toolbar .escr-text-field.range-text-field {
-    margin-right: 1rem;
+/* a hairline between selecting and the view's own controls */
+.escr-images-toolbar .new-section {
+    padding-left: 8px;
+    border-left: 1px solid var(--divider);
 }
-.escr-toolbar-right .escr-button:not(:active):not(:hover):not([disabled]) {
-    background-color: transparent;
+.escr-images-toolbar .escr-toggle-button {
+    min-height: 32px;
+    padding: 0 12px;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background-color: var(--background1);
+    color: var(--text1);
+    font-size: 13px;
+    font-weight: 500;
 }
-.escr-toolbar-right .escr-toggle-button--active-secondary:not(:active):not(:hover):not([disabled]) {
-    background-color: var(--secondary);
+.escr-images-toolbar .escr-toggle-button svg {
+    max-width: 16px;
+    max-height: 16px;
+    fill: currentColor;
 }
-.escr-toolbar-right .escr-toggle-button:not([disabled]) {
-    border: none;
+.escr-images-toolbar .escr-toggle-button--active-secondary,
+.escr-images-toolbar .escr-toggle-button--active-secondary:hover {
+    border-color: var(--primary);
+    background-color: var(--selected-background);
+    color: var(--primary);
 }
-.escr-toolbar-right .new-section {
-    padding-left: 1rem;
-    margin-left: 1rem;
-    border-left: 1px solid var(--text3);
-}
-/* mode switcher (grid and list view) */
+/* grid / list: a quiet track with the current view raised */
 .escr-images-toolbar .escr-segmented-button-group {
-    margin-left: 2rem;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 8px;
+    background-color: var(--nav-hover);
 }
 .escr-images-toolbar .escr-segmented-button-group > div,
-.escr-images-toolbar .escr-segmented-button-group > div input + div label {
-    height: 38px;
-    max-height: 38px;
-    width: 38px;
-    max-width: 38px;
+.escr-images-toolbar .escr-segmented-button-group > div > label,
+.escr-images-toolbar .escr-segmented-button-group > div > div > label {
+    width: 28px;
+    max-width: 28px;
+    height: 28px;
+    min-height: 28px;
+    max-height: 28px;
+    margin: 0;
+    padding: 0;
 }
-.escr-images-toolbar .escr-segmented-button-group input:not(:checked):not(:disabled) + label,
-.escr-images-toolbar .escr-segmented-button-group input:not(:checked):not(:disabled) + div > label{
+.escr-images-toolbar .escr-segmented-button-group > div > label,
+.escr-images-toolbar .escr-segmented-button-group > div > div > label {
+    border-radius: 6px;
+}
+.escr-images-toolbar .escr-segmented-button-group label svg {
+    width: 16px;
+    height: 16px;
+}
+.escr-images-toolbar .escr-segmented-button-group input:not(:checked) + label,
+.escr-images-toolbar .escr-segmented-button-group input:not(:checked) + div > label {
+    background-color: transparent;
+    color: var(--text2);
+    fill: var(--text2);
+}
+.escr-images-toolbar .escr-segmented-button-group input:checked + label,
+.escr-images-toolbar .escr-segmented-button-group input:checked + div > label {
     background-color: var(--background1);
+    color: var(--text1);
+    fill: var(--text1);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 12%);
 }
 
-/* image selection toolbar */
+/* ---- selection bar ---- */
 .escr-image-selection-toolbar {
-    position: relative;
     display: flex;
+    flex: none;
     flex-flow: row nowrap;
     align-items: center;
     justify-content: space-between;
-    width: 100%;
-    height: 48px;
-    background-color: var(--secondary);
-    z-index: var(--editor-toolbar-z);
-    padding: 0 2rem;
-    box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+    gap: 16px;
+    min-height: 44px;
+    margin-bottom: 16px;
+    padding: 0 6px 0 16px;
+    border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent);
+    border-radius: 10px;
+    background-color: var(--selected-background);
 }
 .escr-image-selection-toolbar .selected-count {
+    flex: none;
+    color: var(--primary);
+    font-size: 13px;
     font-weight: 600;
-    font-size: 14px;
-    color: var(--button-text);
 }
 .escr-image-selection-toolbar .escr-toolbar-center {
     display: flex;
+    flex: 1 1 auto;
+    flex-flow: row wrap;
     align-items: center;
-    flex-flow: row nowrap;
+    gap: 2px;
 }
-.escr-image-selection-toolbar .escr-button:focus:not(:hover) {
-    background-color: var(--secondary-darker);
+.escr-image-selection-toolbar .escr-button {
+    color: var(--text1);
+    fill: var(--text1);
+}
+.escr-image-selection-toolbar .escr-button svg {
+    color: var(--text2);
+    fill: var(--text2);
+}
+.escr-image-selection-toolbar .escr-button:hover:not([disabled]) {
+    background-color: color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
-/* image grid */
-.escr-image-grid {
-    overflow-y: auto;
-    overflow-x: hidden;
+/* ---- images ---- */
+.escr-image-grid,
+.escr-image-list {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
     margin: 0;
-    max-height: calc(100vh - 188px);
-}
-.escr-image-selection-toolbar + .escr-image-grid {
-    max-height: calc(100vh - 236px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    outline: none;
 }
 .escr-image-grid ul {
     display: flex;
     flex-flow: row wrap;
-    gap: 0;
-    row-gap: 2rem;
+    justify-content: flex-start;
+    gap: 20px 8px;
+    margin: 0;
+    /* room for the selected cards' ring */
+    padding: 4px 0 24px;
     list-style: none;
-    margin: 0 auto;
-    padding: 2rem;
-    justify-content: center;
 }
-.escr-image-grid .escr-load-more-btn {
-    margin: 0 auto 2rem;
+.escr-image-grid .escr-load-more-btn,
+.escr-image-list .escr-load-more-btn {
+    margin: 0 auto 24px;
 }
 .escr-image-grid .hidden-images-indicator {
     height: 248px;
 }
-
+.escr-images-page .grid-spinner.escr-loader-container {
+    margin-top: 48px;
+}
+.escr-images-page .grid-spinner.escr-loader-container .escr-spinner {
+    width: 32px;
+    height: 32px;
+    max-width: 32px;
+    max-height: 32px;
+    border-width: 4px;
+}
+.escr-images-page .escr-spinner {
+    border-color: var(--text3);
+    border-right-color: transparent;
+}
+/* loading more: the images fade, a spinner in the middle of the view */
+.escr-image-grid:has(> .images-loading-overlay) > ul,
+.escr-image-list:has(> .images-loading-overlay) > .escr-table {
+    opacity: 0.5;
+    pointer-events: none;
+}
 .images-loading-overlay {
     position: fixed;
-    width: calc(100vw - 128px);
-    height: calc(100vh - 188px);
-    top: 188px;
-    left: 64px;
-    background-color: rgba(0, 0, 0, 0.25);
-    text-align: center;
-    padding-top: 4rem;
+    top: 50%;
+    left: calc(50% + var(--nav-width, 0px) / 2);
     z-index: var(--loading-overlay-z);
+    transform: translate(-50%, -50%);
 }
-.escr-image-selection-toolbar + .escr-image-grid .images-loading-overlay,
-.escr-image-selection-toolbar + .escr-image-list .images-loading-overlay {
-    height: calc(100vh - 236px);
-    top: 236px;
-}
-
-.images-loading-overlay.no-bg {
-    background-color: transparent;
-}
-
-.images-loading-overlay.no-bg .escr-spinner {
-    border-color: var(--text1);
+.images-loading-overlay .escr-spinner {
+    width: 32px;
+    height: 32px;
+    max-width: 32px;
+    max-height: 32px;
+    border-width: 4px;
+    border-color: var(--text2);
     border-right-color: transparent;
 }
 
-/* image list */
-.escr-image-list {
-    overflow-y: auto;
-    overflow-x: hidden;
-    margin: 1.5rem 2rem 0;
-    max-height: calc(100vh - 188px - 1.5rem);
-    outline: none;
-}
-.escr-image-selection-toolbar + .escr-image-list {
-    max-height: calc(100vh - 236px - 1.5rem);
-}
+/* list view: the shared table style; its header stays in view */
 .escr-image-list .escr-table {
-    background-color: transparent;
-    margin-bottom: 2rem;
+    margin-bottom: 24px;
 }
 .escr-image-list .escr-table th {
     position: sticky;
     top: 0;
-    background-color: var(--background);
     z-index: var(--sticky-table-header-z);
+    background-color: var(--background);
 }
-.escr-image-list .escr-table tbody {
-    background-color: var(--background1);
-}
-.escr-image-list .escr-table td {
-    font-size: 0.75rem;
-}
-.escr-image-list .escr-table td.with-img,
-.escr-image-list .escr-table td.number,
-.escr-image-list .escr-table td.workflow {
-    font-weight: 600;
+.escr-image-list .escr-table td.with-img img {
+    width: 32px;
+    height: 32px;
+    margin-right: 12px;
+    border-radius: 6px;
+    object-fit: cover;
 }
 .escr-image-list .escr-table th.number div {
     justify-content: center;
 }
 .escr-image-list .escr-table td.number {
     text-align: center;
-}
-.escr-image-list .escr-table tr td:first-of-type,
-.escr-image-list .escr-table tr th:first-of-type {
-    padding: 0 0 0 2rem;
 }
 
 /* hidden images indicator */
@@ -270,8 +287,10 @@ body:has(.escr-images-page) {
     flex-flow: column;
     align-items: center;
     justify-content: center;
-    gap: 1rem;
+    gap: 12px;
     width: 220px;
+    color: var(--text2);
+    font-size: 13px;
 }
 .hidden-images-indicator span {
     display: block;
@@ -279,9 +298,8 @@ body:has(.escr-images-page) {
     text-align: center;
 }
 .escr-image-list .hidden-images-indicator {
-    margin: 1rem auto;
-    background-color: var(--background1);
-    padding: 1rem;
+    margin: 16px auto;
+    padding: 16px;
 }
 
 /* task status */

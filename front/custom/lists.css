@@ -1,0 +1,187 @@
+/*
+ * Lists: a page's main list (Projects, a project's Documents) sits flat on the
+ * page, heading on the left, filters and actions on the right; every table
+ * (Vue's EscrTable and the tables of Django pages) shares one quiet style:
+ * muted header, borderless rows, alternate rows tinted, rounded row ends.
+ */
+
+/* list sections: no card */
+html:has(#main.escr-vue-enabled) :is(
+    .escr-projects-list .escr-card-table,
+    .escr-project-dashboard .escr-documents-list
+) {
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    /* focus rings of the header controls must not be clipped (the table
+       container scrolls on its own) */
+    overflow: visible;
+}
+html:has(#main.escr-vue-enabled) :is(
+    .escr-projects-list .escr-card-table,
+    .escr-project-dashboard .escr-documents-list
+) > * {
+    padding: 0;
+}
+html:has(#main.escr-vue-enabled) :is(
+    .escr-projects-list .escr-card-table,
+    .escr-project-dashboard .escr-documents-list
+) .escr-card-header {
+    gap: 16px;
+    margin: 0 0 28px;
+    padding: 0;
+}
+html:has(#main.escr-vue-enabled) :is(
+    .escr-projects-list .escr-card-table,
+    .escr-project-dashboard .escr-documents-list
+) .escr-card-header :is(h1, h2) {
+    margin: 0;
+}
+html:has(#main.escr-vue-enabled) :is(
+    .escr-projects-list .escr-card-table,
+    .escr-project-dashboard .escr-documents-list
+) .escr-card-actions {
+    gap: 8px;
+}
+html:has(#main.escr-vue-enabled) :is(
+    .escr-projects-list .escr-card-table,
+    .escr-project-dashboard .escr-documents-list
+) .escr-card-actions > button:last-of-type {
+    margin-left: 0;
+}
+
+/* tables (outside the editor, which styles its own) */
+html:has(#main.escr-vue-enabled) :is(
+    .escr-table:not(#escr-editor *),
+    main:not(:has(.escr-page)) table.table
+) {
+    background: transparent;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 0;
+}
+html:has(#main.escr-vue-enabled) :is(
+    .escr-table:not(#escr-editor *),
+    main:not(:has(.escr-page)) table.table
+) tr {
+    height: auto;
+    border: none;
+    background: transparent;
+}
+/* header row: small muted labels over a hairline (drawn on the row, as the
+   actions column has no header cell) */
+html:has(#main.escr-vue-enabled) :is(
+    .escr-table:not(#escr-editor *),
+    main:not(:has(.escr-page)) table.table
+) tr:has(> th) {
+    box-shadow: inset 0 -1px 0 var(--divider);
+}
+html:has(#main.escr-vue-enabled) :is(
+    .escr-table:not(#escr-editor *),
+    main:not(:has(.escr-page)) table.table
+) th {
+    height: 36px;
+    padding-top: 0;
+    padding-bottom: 0;
+    border: none;
+    vertical-align: middle;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+}
+html:has(#main.escr-vue-enabled) .escr-table:not(#escr-editor *) th .escr-sort-button {
+    font-size: 12px;
+    color: var(--text2);
+}
+/* body rows: borderless, alternate rows tinted, ends rounded */
+html:has(#main.escr-vue-enabled) :is(
+    .escr-table:not(#escr-editor *),
+    main:not(:has(.escr-page)) table.table
+) td {
+    height: 48px;
+    padding-top: 0;
+    padding-bottom: 0;
+    border: none;
+    vertical-align: middle;
+    background: transparent;
+}
+html:has(#main.escr-vue-enabled) :is(
+    .escr-table:not(#escr-editor *),
+    main:not(:has(.escr-page)) table.table
+) tr:nth-child(odd of :not(.collapse, .escr-dropzone):has(> td)) > td {
+    background-color: var(--table-stripe);
+}
+html:has(#main.escr-vue-enabled) :is(
+    .escr-table:not(#escr-editor *),
+    main:not(:has(.escr-page)) table.table
+) tr:is(:hover, :focus-within):has(> td) > td {
+    background-color: var(--table-hover);
+}
+html:has(#main.escr-vue-enabled) :is(
+    .escr-table:not(#escr-editor *),
+    main:not(:has(.escr-page)) table.table
+) td:first-child {
+    border-radius: 8px 0 0 8px;
+}
+html:has(#main.escr-vue-enabled) :is(
+    .escr-table:not(#escr-editor *),
+    main:not(:has(.escr-page)) table.table
+) td:last-child {
+    border-radius: 0 8px 8px 0;
+}
+html:has(#main.escr-vue-enabled) :is(
+    .escr-table:not(#escr-editor *),
+    main:not(:has(.escr-page)) table.table
+) td:only-child {
+    border-radius: 8px;
+}
+/* first and last columns keep the text off the rounded ends */
+html:has(#main.escr-vue-enabled) :is(
+    .escr-table:not(#escr-editor *),
+    main:not(:has(.escr-page)) table.table
+) tr > :first-child {
+    padding-left: 12px;
+}
+html:has(#main.escr-vue-enabled) :is(
+    .escr-table:not(#escr-editor *),
+    main:not(:has(.escr-page)) table.table
+) tr > :last-child {
+    padding-right: 12px;
+}
+
+/* the "nothing to show" message of an empty section (EscrLoader once loaded):
+   a quiet line, not body text */
+html:has(#main.escr-vue-enabled) .escr-loader-container:not(:has(.escr-spinner)):not(#escr-editor *) {
+    padding: 24px 0;
+    color: var(--text3);
+    font-size: 13px;
+}
+
+/* table select checkboxes: quiet when empty, the primary colour when ticked
+   (or partly, in the header) */
+html:has(#main.escr-vue-enabled) .escr-table:not(#escr-editor *) .escr-select-checkbox svg {
+    width: 20px;
+    height: 20px;
+    color: var(--primary);
+}
+html:has(#main.escr-vue-enabled) .escr-table:not(#escr-editor *) .escr-select-checkbox:not(:has(input:checked)) .unchecked {
+    color: var(--text3);
+}
+html:has(#main.escr-vue-enabled) .escr-table:not(#escr-editor *) .escr-select-checkbox:hover:not(:has(input:checked)) .unchecked {
+    color: var(--text2);
+}
+
+/* selected rows: a light primary tint and a thin primary line on the left,
+   instead of the thick dark bar */
+html:has(#main.escr-vue-enabled) .escr-table.escr-table--selectable:not(#escr-editor *) tbody tr:has(input:checked) {
+    background-color: transparent;
+    box-shadow: none;
+}
+html:has(#main.escr-vue-enabled) .escr-table.escr-table--selectable:not(#escr-editor *) tbody tr:has(input:checked) > td {
+    background-color: var(--selected-background);
+}
+html:has(#main.escr-vue-enabled) .escr-table.escr-table--selectable:not(#escr-editor *) tbody tr:has(input:checked) > td:first-child {
+    box-shadow: inset 2px 0 0 var(--primary);
+}

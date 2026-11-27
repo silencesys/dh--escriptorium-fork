@@ -70,6 +70,7 @@ class zoomTarget {
             this.refreshMap();
             this.mapWhole.style.opacity = 0.7;
             this.mapCurrent.textContent = Math.round(scale * 100) + "%";
+            this.mapLabel.textContent = this.mapCurrent.textContent;
             this.mapCurrent.style.transform =
                 "" +
                 "translate(" +
@@ -126,6 +127,13 @@ class zoomTarget {
         this.mapCurrent.style.backgroundColor = mapColors[1];
         this.mapCurrent.style.transformOrigin = "0 0";
         this.mapWhole.appendChild(this.mapCurrent);
+
+        // the zoom level, fixed in the map's corner (the new UI shows it instead
+        // of the text inside the moving box, which can leave the map)
+        this.mapLabel = document.createElement("div");
+        this.mapLabel.classList.add("wheelzoom-map-label");
+        this.mapLabel.style.display = "none";
+        this.mapWhole.appendChild(this.mapLabel);
     }
 }
 
@@ -159,7 +167,7 @@ export class WheelZoom {
         this.pos = { x: 0, y: 0 };
     }
 
-    register(domElement, { mirror = false, map = false } = {}) {
+    register(domElement, { mirror = false, map = false, panOnEmpty = false } = {}) {
         this.events.addEventListener("wheelzoom.reset", this.reset.bind(this));
         this.events.addEventListener(
             "wheelzoom.refresh",
@@ -180,8 +188,17 @@ export class WheelZoom {
                 this.scrolled.bind(this)(event);
             }
             const drag = function (event) {
+                // new UI: with the select tool, dragging the empty page pans too
+                // (panOnEmpty: anything but its elements, which handle their own clicks)
+                const emptyPan =
+                    panOnEmpty &&
+                    !this.legacyModeEnabled &&
+                    this.getActiveTool() === "select" &&
+                    event.button === 0 &&
+                    !event.target.closest("g, a, button, input, select, textarea, [contenteditable]");
                 // in case of mask over the element, bc we bind to document so event.target can be whatever
                 if (
+                    !emptyPan &&
                     (this.legacyModeEnabled || this.getActiveTool() !== "pan") &&
                     !(event.which === 3 || event.button === 2)
                 ) {
@@ -337,6 +354,15 @@ export class WheelZoom {
         document.removeEventListener("mouseup", this.bRemDrag);
         document.removeEventListener("mousemove", this.bDrag);
         this.previousEvent = null;
+    }
+
+    /**
+     * Pan from a press that a panel handles itself (the segmentation canvas
+     * sits outside its zoom container): `domElement` is the registered element.
+     */
+    panFrom(event, domElement) {
+        this.dragging = this.targets.find((t) => t.element === domElement) || this.targets[0];
+        this.draggable(event);
     }
 
     draggable(event) {

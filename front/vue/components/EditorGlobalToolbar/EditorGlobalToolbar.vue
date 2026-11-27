@@ -1,9 +1,11 @@
 <template>
     <div class="escr-toolbar escr-editor-global-toolbar">
-        <!-- empty div for space -->
-        <div class="escr-editortoolbar-section" />
+        <!-- the element being edited: title, paging, its tools -->
+        <div class="escr-editortoolbar-section">
+            <slot name="start" />
+        </div>
 
-        <!-- main toolbar items -->
+        <!-- view tools, shared by all panels; then adding panels -->
         <div class="escr-editortoolbar-section">
             <VDropdown
                 theme="escr-tooltip-small"
@@ -155,10 +157,12 @@
             </div>
         </div>
 
-        <!-- quick actions and add panel -->
-        <div class="escr-editortoolbar-section">
+        <!-- panels (at most three) -->
+        <div
+            v-if="editorPanels.length < 3"
+            class="escr-editortoolbar-section new-section with-separator"
+        >
             <VDropdown
-                v-if="editorPanels.length < 3"
                 placement="bottom-end"
                 theme="vertical-menu"
                 :shown="addPanelMenuOpen"
@@ -169,61 +173,26 @@
                 <EscrButton
                     :disabled="disabled"
                     :on-click="openAddPanelMenu"
-                    color="text-alt"
-                    label="Add Panel"
+                    color="text"
+                    aria-label="Add panel"
+                    title="Add panel"
                 >
                     <template #button-icon>
                         <AddPanelIcon />
                     </template>
-                    <template #button-icon-right>
-                        <ChevronDownIcon />
-                    </template>
                 </EscrButton>
                 <template #popper>
                     <ul class="escr-vertical-menu">
-                        <li v-if="!editorPanels.includes('segmentation')">
+                        <li
+                            v-for="option in panelsToAdd"
+                            :key="option.type"
+                        >
                             <button
                                 type="button"
-                                @mousedown="onAddEditorPanel('segmentation')"
+                                @mousedown="onAddEditorPanel(option.type)"
                             >
-                                <SegmentIcon />
-                                <span>Segmentation</span>
-                            </button>
-                        </li>
-                        <li v-if="!editorPanels.includes('visualisation')">
-                            <button
-                                type="button"
-                                @mousedown="onAddEditorPanel('visualisation')"
-                            >
-                                <TranscribeIcon />
-                                <span>Transcription</span>
-                            </button>
-                        </li>
-                        <li v-if="!editorPanels.includes('diplomatic')">
-                            <button
-                                type="button"
-                                @mousedown="onAddEditorPanel('diplomatic')"
-                            >
-                                <TextPanelIcon />
-                                <span>Text / Line Ordering</span>
-                            </button>
-                        </li>
-                        <li v-if="!editorPanels.includes('source')">
-                            <button
-                                type="button"
-                                @mousedown="onAddEditorPanel('source')"
-                            >
-                                <ImageAnnotationIcon />
-                                <span>Image Annotation</span>
-                            </button>
-                        </li>
-                        <li v-if="!editorPanels.includes('elements')">
-                            <button
-                                type="button"
-                                @mousedown="onAddEditorPanel('elements')"
-                            >
-                                <TableIcon />
-                                <span>Overview</span>
+                                <component :is="option.icon" />
+                                <span>{{ option.label }}</span>
                             </button>
                         </li>
                     </ul>
@@ -234,24 +203,25 @@
 </template>
 <script>
 import { mapActions, mapState } from "vuex";
-import AddPanelIcon from "../Icons/AddPanelIcon/AddPanelIcon.vue";
-import ChevronDownIcon from "../Icons/ChevronDownIcon/ChevronDownIcon.vue";
-import CursorPanIcon from "../Icons/CursorPanIcon/CursorPanIcon.vue";
-import CursorSelectIcon from "../Icons/CursorSelectIcon/CursorSelectIcon.vue";
+import {
+    Hand, Maximize, MousePointer2, PanelRightOpen,
+    RotateCcwSquare, RotateCwSquare, ZoomIn, ZoomOut,
+} from "lucide";
 import EscrButton from "../Button/Button.vue";
-import ImageAnnotationIcon from "../Icons/ImageAnnotationIcon/ImageAnnotationIcon.vue";
-import RotateCCWIcon from "../Icons/RotateCCWIcon/RotateCCWIcon.vue";
-import RotateCWIcon from "../Icons/RotateCWIcon/RotateCWIcon.vue";
-import SegmentIcon from "../Icons/SegmentIcon/SegmentIcon.vue";
-import TableIcon from "../Icons/TableIcon/TableIcon.vue";
-import TextPanelIcon from "../Icons/TextPanelIcon/TextPanelIcon.vue";
+import lucideIcon from "../Icons/Lucide/lucideIcon";
+import PANELS from "../EditorToolbar/panels";
 import ToggleButton from "../ToggleButton/ToggleButton.vue";
-import TranscribeIcon from "../Icons/TranscribeIcon/TranscribeIcon.vue";
-import ZoomInIcon from "../Icons/ZoomInIcon/ZoomInIcon.vue";
-import ZoomOutIcon from "../Icons/ZoomOutIcon/ZoomOutIcon.vue";
-import ZoomResetIcon from "../Icons/ZoomResetIcon/ZoomResetIcon.vue";
 import { Dropdown as VDropdown } from "floating-vue";
 import "./EditorGlobalToolbar.css";
+
+const AddPanelIcon = lucideIcon(PanelRightOpen);
+const CursorPanIcon = lucideIcon(Hand);
+const CursorSelectIcon = lucideIcon(MousePointer2);
+const RotateCCWIcon = lucideIcon(RotateCcwSquare);
+const RotateCWIcon = lucideIcon(RotateCwSquare);
+const ZoomInIcon = lucideIcon(ZoomIn);
+const ZoomOutIcon = lucideIcon(ZoomOut);
+const ZoomResetIcon = lucideIcon(Maximize);
 
 export default {
     name: "EscrEditorGlobalToolbar",
@@ -260,19 +230,13 @@ export default {
         CursorPanIcon,
         CursorSelectIcon,
         EscrButton,
-        ImageAnnotationIcon,
         RotateCCWIcon,
         RotateCWIcon,
-        SegmentIcon,
-        TableIcon,
-        TextPanelIcon,
         ToggleButton,
-        TranscribeIcon,
         VDropdown,
         ZoomInIcon,
         ZoomOutIcon,
         ZoomResetIcon,
-        ChevronDownIcon
     },
     props: {
         /**
@@ -332,6 +296,9 @@ export default {
     },
     computed: {
         ...mapState({ editorPanels: (state) => state.document.editorPanels }),
+        panelsToAdd() {
+            return PANELS.filter((panel) => !this.editorPanels.includes(panel.type));
+        },
     },
     methods: {
         ...mapActions("document", ["addEditorPanel"]),

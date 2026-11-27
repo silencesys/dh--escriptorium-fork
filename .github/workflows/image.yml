@@ -1,0 +1,139 @@
+# Builds this deployment's eScriptorium image (upstream's Dockerfile, so it
+# carries our app/apps/escr_custom and the front end with front/custom),
+# tests our additions against upstream's code inside that very image, and
+# pushes it to the GitHub container registry.
+#
+#   ghcr.io/<owner>/<repo>:latest     the default branch
+#   ghcr.io/<owner>/<repo>:<branch>   other branches
+#   ghcr.io/<owner>/<repo>:1.2.3      tags v1.2.3
+#   ghcr.io/<owner>/<repo>:sha-xxxxxxx every build
+#
+# Deploy it with upstream's docker-compose.yml and deploy/docker-compose.custom.yml
+# (see deploy/README.md).
+name: Image
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: image-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: escriptorium
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:alpine
+        ports: ["6379:6379"]
+
+    steps:
+      # the kraken base image is large: make room on the runner
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          docker system prune -af
+          df -h /
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # upstream's tags give the version shown in the app
+
+      - name: Names
+        id: names
+        run: |
+          echo "image=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+          echo "version=$(git tag --sort=-v:refname | head -1)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.names.outputs.image }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=sha
+
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: escriptorium:ci
+          build-args: VERSION_DATE=${{ steps.names.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # fails when an upstream merge breaks what our hooks rely on
+      - name: Test our additions in the image
+        run: |
+          docker run --rm --network host \
+            -e DJANGO_SETTINGS_MODULE=apps.escr_custom.settings \
+            -e SQL_HOST=localhost -e SQL_PORT=5432 \
+            -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=escriptorium \
+            -e REDIS_HOST=localhost -e SECRET_KEY=ci \
+            --entrypoint python escriptorium:ci manage.py test escr_custom --noinput -v 2
+
+      - name: Check the deploy compose files
+        run: |
+          cp variables.env_example variables.env
+          ESCR_IMAGE=${{ steps.names.outputs.image }}:latest \
+            docker compose -f docker-compose.yml -f deploy/docker-compose.custom.yml config --quiet
+
+      - name: Log in to the registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # the same build again, from the cache, now pushed under its tags
+      - name: Push
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: VERSION_DATE=${{ steps.names.outputs.version }}
+          cache-from: type=gha
+
+      # what a server needs besides the image, ready to download
+      - name: Deploy bundle
+        if: github.event_name != 'pull_request'
+        run: |
+          mkdir -p bundle/nginx
+          cp docker-compose.yml variables.env_example bundle/
+          cp deploy/docker-compose.custom.yml deploy/README.md bundle/
+          cp -r nginx/. bundle/nginx/
+          echo "ESCR_IMAGE=${{ steps.names.outputs.image }}:sha-${GITHUB_SHA::7}" > bundle/.env
+      - uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request'
+        with:
+          name: deploy-bundle
+          path: bundle
+          include-hidden-files: true

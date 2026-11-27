@@ -1,0 +1,39 @@
+# Our backend additions (app/apps/escr_custom) are switched on by its settings
+# module, for every service that runs Django; the workers also see app/apps
+# live, like web does, so they run the same code (restart them after changes).
+x-custom: &custom
+  environment:
+    - DJANGO_SETTINGS_MODULE=apps.escr_custom.settings
+  volumes:
+    - ./app/apps:/usr/src/app/apps:ro
+
+services:
+  web:
+    environment:
+      - DJANGO_SETTINGS_MODULE=apps.escr_custom.settings
+      - DEBUG=True                          # stats file re-read on every request
+      - UWSGI_PY_AUTORELOAD=2               # reload on python changes (seconds)
+    volumes:
+      - ./front/dist:/usr/src/app/front     # Django sees new bundle names live
+      - ./app/apps:/usr/src/app/apps:ro     # backend tweaks live, no image rebuild
+      - ./app/escriptorium/templates:/usr/src/app/escriptorium/templates:ro
+
+  channelserver: *custom
+  celery-main: *custom
+  celery-live: *custom
+  celery-low-priority: *custom
+  celery-gpu: *custom
+  celery-intensive-inference: *custom
+
+  nginx:
+    volumes:
+      - ./front/dist:/srv/front/static:ro
+      - ./nginx/dev.conf:/etc/nginx/conf.d/nginx.conf
+
+  front:                                    # the only thing you "develop"
+    image: node:12-alpine                   # same as the Dockerfile and CI
+    working_dir: /build
+    volumes:
+      - ./front:/build
+      - /build/node_modules                 # keep Linux node_modules off the host
+    command: sh -c "npm ci && npm start"    # webpack --watch

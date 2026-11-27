@@ -7,18 +7,25 @@
 }
 .escr-image-card {
     position: relative;
-    margin: 0 15px;
-    width: 220px;
-    height: 248px;
-    border-radius: 15px;
+    margin: 0 6px;
+    width: 208px;
+    height: 236px;
+    border: 1px solid var(--divider);
+    border-radius: 12px;
     background-color: var(--background1);
     display: flex;
     flex-flow: column;
     align-items: center;
     justify-content: flex-start;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
+.escr-image-card:hover {
+    border-color: var(--background2-darker);
+}
+/* selected: the primary colour as a ring, not a heavy outline */
 .escr-image-card.image-selected {
-    outline: 4px solid var(--secondary);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 1px var(--primary);
 }
 
 /* drop zones for drag and drop reordering */
@@ -26,8 +33,8 @@
 .escr-part-dropzone-after {
     position: absolute;
     top: 0;
-    width: 125px;
-    height: 248px;
+    width: 110px;
+    height: 236px;
     background-color: transparent;
     pointer-events: none;
     z-index: var(--editor-toolbar-z);
@@ -48,10 +55,10 @@
     border-left: 6px solid transparent;
 }
 .escr-part-dropzone-after.drag-over {
-    border-right-color: var(--secondary);
+    border-right-color: var(--primary);
 }
 .escr-image-grid[dir="rtl"] .escr-part-dropzone-after.drag-over {
-    border-left-color: var(--secondary);
+    border-left-color: var(--primary);
 }
 .escr-part-dropzone-before {
     left: 0;
@@ -65,17 +72,19 @@
     border-right: 6px solid transparent;
 }
 .escr-part-dropzone-before.drag-over {
-    border-left-color: var(--secondary);
+    border-left-color: var(--primary);
 }
 .escr-image-grid[dir="rtl"] .escr-part-dropzone-before.drag-over {
-    border-right-color: var(--secondary);
+    border-right-color: var(--primary);
 }
-/* checkbox for each image selection */
+/* checkbox for each image selection: a light circle on the image, filled
+   with the primary colour once selected */
 .escr-image-card label.image-checkbox {
     position: absolute;
     top: 0;
     left: 0;
-    margin: 10px;
+    z-index: 1;
+    margin: 8px;
     cursor: pointer;
     user-select: none;
 }
@@ -84,15 +93,16 @@
 }
 .escr-image-card label.image-checkbox input[type="checkbox"] + svg,
 .escr-image-card label.image-checkbox input[type="checkbox"] + svg + span::before {
-    color: var(--secondary);
     width: 20px;
     height: 20px;
-    background-color: var(--toast-text);
     border-radius: 50%;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 30%);
 }
 .escr-image-card label.image-checkbox input[type="checkbox"] + svg {
     display: none;
+    color: var(--primary);
+    fill: var(--primary);
+    background-color: #fff;
 }
 .escr-image-card label.image-checkbox input[type="checkbox"]:checked + svg {
     display: block;
@@ -101,15 +111,18 @@
     display: block;
     content: " ";
     box-sizing: border-box;
-    border: 2px solid var(--secondary);
-    border-radius: 50%;
+    border: 1.5px solid #fff;
+    background-color: rgb(0 0 0 / 15%);
+}
+.escr-image-card label.image-checkbox:hover input[type="checkbox"] + svg + span::before {
+    background-color: rgb(0 0 0 / 30%);
 }
 .escr-image-card label.image-checkbox input[type="checkbox"]:checked + svg + span::before {
     display: none;
 }
 .escr-image-card label.image-checkbox:focus-within svg + span::before,
 .escr-image-card label.image-checkbox:focus-within svg {
-    box-shadow: 0 0 0 0.2rem  var(--secondary-focus);
+    box-shadow: 0 0 0 3px var(--primary-focus);
     border-radius: 50%;
 }
 
@@ -121,7 +134,8 @@
     top: 0;
     padding: 4px 0;
     left: calc(50% - 24px);
-    background-color: var(--secondary);
+    border-radius: 0 0 8px 8px;
+    background-color: var(--primary);
     color: var(--button-text);
     text-align: center;
     cursor: move;
@@ -154,24 +168,40 @@
     z-index: var(--editor-nav-z);
 }
 
-/* image actions panel */
+/* image actions: a small floating pill on the image, shown on hover */
 .escr-image-card .escr-image-actions {
     position: absolute;
-    top: 0;
-    right: 0;
+    top: 6px;
+    right: 6px;
     display: none;
     flex-flow: row nowrap;
-    background-color: var(--secondary);
-    padding: 3px 0.5rem;
-    border-top-right-radius: 15px;
+    gap: 2px;
+    padding: 2px;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background-color: var(--background1);
+    box-shadow: 0 2px 6px rgb(0 0 0 / 12%);
 }
-.escr-image-actions a {
-    color: var(--button-text);
+.escr-image-card .escr-image-actions .escr-button {
+    min-width: 26px;
+    min-height: 26px;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border-radius: 6px;
+    background-color: transparent;
+    color: var(--text1);
+    fill: var(--text1);
 }
+.escr-image-card .escr-image-actions .escr-button svg {
+    max-width: 16px;
+    max-height: 16px;
+}
+.escr-image-card .escr-image-actions .escr-button:hover,
 .escr-image-actions a:focus:not(:active),
 .escr-image-actions button:focus:not(:active),
-.escr-image-actions.context-menu-open .context-menu-button  {
-    background-color: var(--secondary-dark);
+.escr-image-actions.context-menu-open .context-menu-button {
+    background-color: var(--nav-hover);
 }
 .escr-image-card:hover .escr-image-actions,
 .escr-image-card:focus-within .escr-image-actions,
@@ -179,56 +209,63 @@
     display: flex;
 }
 
-/* image thumbnail */
+/* image thumbnail: every card's image the same height, cropped */
 .escr-image-card a.img {
     display: block;
-    min-width: 100%;
-    max-height: 144px;
-    object-fit: cover;
+    width: 100%;
+    height: 136px;
+    flex: none;
+    overflow: hidden;
+    border-radius: 11px 11px 0 0;
 }
 .escr-image-card img {
-    min-width: 100%;
-    max-height: 144px;
+    display: block;
+    width: 100%;
+    height: 100%;
     object-fit: cover;
-    border-top-right-radius: 15px;
-    border-top-left-radius: 15px;
 }
 
 /* image metadata */
 .escr-image-card .filename {
-    margin: 8px;
-    text-align: center;
-    font-size: 12px;
-    font-weight: 600;
-    max-width: calc(100% - 16px);
+    margin: 10px 12px 0;
+    max-width: calc(100% - 24px);
     overflow: hidden;
+    color: var(--text1);
+    font-size: 12.5px;
+    font-weight: 600;
+    text-align: center;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
 .escr-image-card .element-number {
-    margin-top: 8px;
-    font-size: 18px;
-    font-weight: 700;
+    margin-top: 6px;
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 600;
 }
 
-/* image task status */
+/* image task status: quiet icons, coloured once a task has run */
 .escr-image-card .image-status {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-top: 8px;
-    max-height: 24px;
+    justify-content: center;
+    margin-top: 10px;
+    max-height: 20px;
     max-width: 100%;
 }
 .escr-image-card .image-status div {
-    padding: 0 21px;
+    padding: 0 16px;
 }
 .escr-image-card .image-status div:not(:last-of-type) {
-    border-right: 1px solid var(--background2);
+    border-right: 1px solid var(--divider);
 }
 .escr-image-card .image-status svg {
-    max-height: 20px;
-    fill: var(--background2);
+    max-height: 16px;
+    fill: var(--text3);
+    opacity: 0.6;
+}
+.escr-image-card .image-status svg:is(.done, .pending, .ongoing, .error) {
+    opacity: 1;
 }
 .escr-image-card .image-status svg.done {
     fill: var(--completed);
