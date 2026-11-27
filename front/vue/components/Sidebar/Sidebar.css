@@ -1,121 +1,134 @@
-/* sidebar container */
-.escr-sidebar-container {
+/*
+ * Contextual page actions, inside the global navigation (GlobalNavigation.css
+ * styles the buttons); an open panel is shown inline below its action, like
+ * the Tasks pages.
+ */
+.escr-sidebar > ul {
     display: flex;
-    z-index: var(--sidebar-container-z);
-}
-/* sidebar */
-.escr-sidebar {
-    background-color: var(--background1);
-    width: 64px;
-    min-width: 64px;
-    max-width: 64px;
-    padding-top: 32px;
-    filter: drop-shadow(0px 4px 4px var(--drop-shadow));
-    z-index: var(--sidebar-z);
-}
-/* sidebar list of buttons */
-.escr-sidebar ul {
+    flex-flow: column;
+    gap: 2px;
     list-style: none;
     margin: 0;
     padding: 0;
 }
-/* individual sidebar button */
-.escr-sidebar-button {
-    cursor: pointer;
+/* open panel: inline below its action, indented like the Tasks pages */
+.escr-sidebar .escr-selected-action {
+    color: var(--text1);
+    fill: var(--text1);
+}
+.escr-sidebar .escr-selected-action .escr-action-panel {
+    padding: 2px 0 6px;
+}
+/*
+ * Inline panel content: everything looks like the Tasks sub-items
+ * (plain 32px rows, secondary text, soft hover), whatever the panel renders.
+ */
+:is(.escr-global-nav, .escr-nav-flyout) .escr-selected-action .escr-action-panel {
+    font-size: 14px;
+    color: var(--text2);
+}
+:is(.escr-global-nav, .escr-nav-flyout) .escr-selected-action ul {
     display: flex;
     flex-flow: column;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    border: none;
-    font: inherit;
-    font-size: 10px;
-    font-weight: 600;
-    height: 74px;
-    background-color: transparent;
-    color: var(--text1);
-    fill: var(--text1);
-    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out,
-        fill 0.15s ease-in-out;
-}
-.escr-sidebar-button:hover {
-    background-color: var(--background2);
-    color: var(--text1);
-    fill: var(--text1);
-}
-.escr-sidebar-button:active,
-.escr-sidebar-button--selected {
-    background-color: var(--secondary);
-    color: var(--button-text);
-    fill: var(--button-text);
-}
-.escr-sidebar-button--selected:hover {
-    background-color: var(--secondary-dark);
-    color: var(--button-text);
-    fill: var(--button-text);
-}
-.escr-sidebar-button--selected:active {
-    background-color: var(--secondary-darker);
-}
-.escr-sidebar-button:disabled {
-    color: var(--text2);
-    fill: var(--text2);
-    pointer-events: none;
-    cursor: default;
-}
-/* sidebar panel opened */
-.escr-selected-action {
-    position: absolute;
-    right: 64px;
-    width: 288px;
-    height: 100%;
-    background-color: var(--background1);
-    border-top-left-radius: 15px;
-    filter: drop-shadow(-5px 4px 10px rgba(0, 0, 0, 0.15));
-    z-index: var(--sidebar-container-z);
-    color: var(--text1);
-    fill: var(--text1);
-}
-.escr-action-header {
-    padding: 35px 19px;
-    display: flex;
-    flex-flow: row nowrap;
-    align-items: center;
-    border-bottom: 1px solid var(--background2);
-}
-.escr-action-header h2 {
+    gap: 2px;
+    list-style: none;
     margin: 0;
     padding: 0;
 }
-.escr-action-header .escr-action-icon {
-    margin-right: 1rem;
+:is(.escr-global-nav, .escr-nav-flyout) .escr-selected-action li {
+    margin: 0;
+    width: 100%;
 }
-.escr-action-header .escr-close-action {
-    cursor: pointer;
-    background: none;
-    border: none;
+:is(.escr-global-nav, .escr-nav-flyout) .escr-selected-action .escr-button,
+:is(.escr-global-nav, .escr-nav-flyout) .escr-selected-action .escr-share-list li,
+:is(.escr-global-nav, .escr-nav-flyout) .escr-selected-action summary {
     display: flex;
     align-items: center;
-    padding: 8px;
-    width: 28px;
-    height: 28px;
-    position: absolute;
-    right: 1rem;
+    justify-content: flex-start;
+    gap: 10px;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 32px;
+    margin: 0;
+    padding: 0 10px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    box-shadow: none;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: left;
+    color: var(--text2);
+    fill: var(--text2);
 }
-.escr-action-header .escr-close-action svg {
-    width: 14px;
-    height: 14px;
+:is(.escr-global-nav, .escr-nav-flyout) .escr-selected-action .escr-button:hover,
+:is(.escr-global-nav, .escr-nav-flyout) .escr-selected-action summary:hover {
+    background-color: var(--nav-hover);
+    color: var(--text1);
     fill: var(--text1);
 }
-/* variable content in a sidebar panel */
-.escr-selected-action .escr-action-panel {
-    padding: 1rem;
-    overflow-y: auto;
-    max-height: calc(100% - 96px);
+:is(.escr-global-nav, .escr-nav-flyout) .escr-selected-action .escr-button:disabled {
+    color: var(--text3);
+    fill: var(--text3);
 }
-/* backdrop to prevent interactions with rest of page while sidebar panel open */
-.escr-sidebar-backdrop {
-    position: fixed;
-    z-index: var(--sidebar-backdrop-z);
-    left: 0;
+/* submenus are text only, like the Tasks pages */
+:is(.escr-global-nav, .escr-nav-flyout) .escr-selected-action .escr-button svg {
+    display: none;
+}
+:is(.escr-global-nav, .escr-nav-flyout) .escr-selected-action .escr-button span {
+    margin: 0;
+}
+/* empty / loading state reads as a muted sub-item */
+:is(.escr-global-nav, .escr-nav-flyout) .escr-selected-action .escr-loader-container {
+    justify-content: flex-start;
+    min-height: 32px;
+    padding: 0 10px;
+    color: var(--text3);
+}
+:is(.escr-global-nav, .escr-nav-flyout) .escr-selected-action summary svg {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    fill: currentColor;
+}
+/* group labels inside a panel (e.g. Groups / Users) */
+:is(.escr-global-nav, .escr-nav-flyout) .escr-selected-action h3 {
+    margin: 8px 0 2px;
+    padding: 0 10px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text3);
+}
+:is(.escr-global-nav, .escr-nav-flyout) .escr-selected-action .escr-share-list {
+    border: none;
+}
+:is(.escr-global-nav, .escr-nav-flyout) .escr-selected-action .escr-share-list li + li,
+:is(.escr-global-nav, .escr-nav-flyout) .escr-selected-action .escr-share-list + .escr-button {
+    margin-top: 0;
+}
+/* models: summary rows like sub-items, details as small text below */
+:is(.escr-global-nav, .escr-nav-flyout) .escr-selected-action .escr-model-details {
+    border: none;
+}
+:is(.escr-global-nav, .escr-nav-flyout) .escr-selected-action summary {
+    justify-content: space-between;
+    cursor: pointer;
+}
+:is(.escr-global-nav, .escr-nav-flyout) .escr-selected-action .escr-model-details dl {
+    margin: 4px 10px 8px;
+    font-size: 12.5px;
+}
+
+/* subtle heading naming what the actions belong to */
+.escr-sidebar .escr-sidebar-title {
+    display: block;
+    padding: 0 10px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text3);
 }

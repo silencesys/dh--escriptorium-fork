@@ -1,0 +1,999 @@
+/*
+ * Tasks pages: My Tasks (escr_custom/tasks/my_tasks.html) and a task's page
+ * (task_detail.html).
+ *
+ * My Tasks opens with a bento of tiles over the last two weeks: disk usage
+ * and what it is made of, CPU and GPU time with a bar per day (the days the
+ * weekly quota counts in the accent, the rest grey), tasks per day, and how
+ * they ended. The list of tasks follows, in the shared table style.
+ *
+ * Colours by the job they do: magnitude is the accent alone; a task's state
+ * is a status colour, always beside its icon and label; a quota meter turns
+ * to a warning, then to the alert colour, as it fills.
+ */
+/* task states, in the order of the outcome bar (validated for colour vision
+   deficiencies in this order, in both modes), for every tasks page */
+html:has(#main.escr-vue-enabled) {
+    --state-finished: var(--completed);
+    --state-active: var(--primary);
+    --state-failed: var(--alert);
+    --state-canceled: #a1a1aa;
+}
+html.dark-mode:has(#main.escr-vue-enabled) {
+    --state-canceled: #8b8b94;
+}
+html:has(#main.escr-vue-enabled) .escr-tasks {
+    /* disk parts: two steps of the accent */
+    --part-images: var(--primary);
+    --part-models: color-mix(in srgb, var(--primary) 45%, var(--background1));
+    /* an empty meter: a light step of its fill */
+    --meter-track: color-mix(in srgb, var(--primary) 14%, transparent);
+    --spark-rest: var(--background2-darker);
+
+    display: flex;
+    flex-flow: column;
+    gap: 16px;
+    padding-bottom: 32px;
+}
+html.dark-mode:has(#main.escr-vue-enabled) .escr-tasks {
+    --part-models: color-mix(in srgb, var(--primary) 50%, var(--background1));
+    --meter-track: color-mix(in srgb, var(--primary) 22%, transparent);
+}
+html:has(#main.escr-vue-enabled) .escr-tasks h1 {
+    margin-bottom: 4px;
+}
+html:has(#main.escr-vue-enabled) .escr-tasks .escr-icon {
+    flex: none;
+}
+
+/* ---- the bento ---- */
+html:has(#main.escr-vue-enabled) .escr-bento {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+html:has(#main.escr-vue-enabled) .escr-tile--activity {
+    grid-column: span 2;
+}
+@media (max-width: 1100px) {
+    html:has(#main.escr-vue-enabled) .escr-bento {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    html:has(#main.escr-vue-enabled) .escr-tile--disk {
+        grid-column: span 2;
+    }
+}
+@media (max-width: 720px) {
+    html:has(#main.escr-vue-enabled) .escr-bento {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    html:has(#main.escr-vue-enabled) :is(.escr-tile--disk, .escr-tile--activity) {
+        grid-column: auto;
+    }
+}
+
+html:has(#main.escr-vue-enabled) .escr-tile {
+    display: flex;
+    flex-flow: column;
+    min-width: 0;
+    padding: 18px 20px 20px;
+    border: 1px solid var(--divider);
+    border-radius: 12px;
+    background-color: var(--background1);
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) .escr-tile-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+html:has(#main.escr-vue-enabled) .escr-tile-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 28px;
+}
+html:has(#main.escr-vue-enabled) .escr-tile-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background-color: var(--background2);
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) .escr-tile-aside {
+    margin: 0;
+    color: var(--text3);
+    font-size: 12px;
+}
+/* the figure: proportional digits, as it stands alone */
+html:has(#main.escr-vue-enabled) .escr-tile-value {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0 6px;
+    margin: 14px 0 0;
+    font-size: 28px;
+    font-weight: 650;
+    line-height: 34px;
+    letter-spacing: -0.01em;
+}
+html:has(#main.escr-vue-enabled) :is(.escr-tile-unit, .escr-tile-of) {
+    line-height: 1;
+}
+html:has(#main.escr-vue-enabled) .escr-tile-unit {
+    margin-left: -2px;
+    color: var(--text2);
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0;
+}
+html:has(#main.escr-vue-enabled) .escr-tile-of {
+    color: var(--text3);
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0;
+}
+html:has(#main.escr-vue-enabled) .escr-tile-hint {
+    margin: 2px 0 0;
+    color: var(--text3);
+    font-size: 12px;
+    line-height: 16px;
+}
+html:has(#main.escr-vue-enabled) .escr-tile-empty {
+    margin: auto 0 0;
+    padding-top: 16px;
+    color: var(--text3);
+    font-size: 12px;
+}
+/* a quota running out: icon and words, never the colour alone */
+html:has(#main.escr-vue-enabled) .escr-tile-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 12px 0 0;
+    font-size: 12px;
+    font-weight: 600;
+}
+html:has(#main.escr-vue-enabled) .escr-tile-status[data-level="critical"] {
+    color: var(--alert);
+}
+html:has(#main.escr-vue-enabled) .escr-tile-status[data-level="warning"] {
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) .escr-tile-status[data-level="warning"] .escr-icon {
+    color: var(--initiated);
+}
+
+/* legends: a swatch, the name, the figure on the right */
+html:has(#main.escr-vue-enabled) .escr-tile-legend {
+    display: flex;
+    flex-flow: column;
+    gap: 6px;
+    margin: 14px 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 13px;
+    line-height: 18px;
+}
+html:has(#main.escr-vue-enabled) .escr-tile-legend li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+html:has(#main.escr-vue-enabled) .escr-tile-legend-label {
+    flex: 1 1 auto;
+    color: var(--text2);
+}
+html:has(#main.escr-vue-enabled) .escr-tile-legend-value {
+    color: var(--text1);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+html:has(#main.escr-vue-enabled) .escr-swatch {
+    flex: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+}
+
+/* ---- disk: one thin bar, split into images and models (against the
+   limit, when there is one) ---- */
+html:has(#main.escr-vue-enabled) .escr-segbar {
+    display: flex;
+    gap: 2px;
+    height: 8px;
+    margin-top: 16px;
+    overflow: hidden;
+    border-radius: 4px;
+}
+html:has(#main.escr-vue-enabled) .escr-segbar--quota {
+    background-color: var(--meter-track);
+}
+html:has(#main.escr-vue-enabled) .escr-segbar-part {
+    flex: 0 1 auto;
+    min-width: 2px;
+}
+html:has(#main.escr-vue-enabled) :is(.escr-segbar-part--images, .escr-swatch--images) {
+    background-color: var(--part-images);
+}
+html:has(#main.escr-vue-enabled) :is(.escr-segbar-part--models, .escr-swatch--models) {
+    background-color: var(--part-models);
+}
+html:has(#main.escr-vue-enabled) .escr-segbar[data-level="warning"] {
+    --part-images: var(--initiated);
+    --part-models: color-mix(in srgb, var(--initiated) 50%, var(--background1));
+    --meter-track: color-mix(in srgb, var(--initiated) 18%, transparent);
+}
+html:has(#main.escr-vue-enabled) .escr-segbar[data-level="critical"] {
+    --part-images: var(--alert);
+    --part-models: color-mix(in srgb, var(--alert) 50%, var(--background1));
+    --meter-track: color-mix(in srgb, var(--alert) 18%, transparent);
+}
+
+/* ---- CPU / GPU: the quota meter, then a bar per day ---- */
+html:has(#main.escr-vue-enabled) .escr-meter {
+    height: 8px;
+    margin-top: 14px;
+    overflow: hidden;
+    border-radius: 4px;
+    background-color: var(--meter-track);
+}
+html:has(#main.escr-vue-enabled) .escr-meter-fill {
+    display: block;
+    height: 100%;
+    border-radius: 4px;
+    background-color: var(--primary);
+}
+html:has(#main.escr-vue-enabled) .escr-meter[data-level="warning"] {
+    background-color: color-mix(in srgb, var(--initiated) 18%, transparent);
+}
+html:has(#main.escr-vue-enabled) .escr-meter[data-level="warning"] .escr-meter-fill {
+    background-color: var(--initiated);
+}
+html:has(#main.escr-vue-enabled) .escr-meter[data-level="critical"] {
+    background-color: color-mix(in srgb, var(--alert) 18%, transparent);
+}
+html:has(#main.escr-vue-enabled) .escr-meter[data-level="critical"] .escr-meter-fill {
+    background-color: var(--alert);
+}
+
+html:has(#main.escr-vue-enabled) .escr-spark {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 44px;
+    margin-top: auto;
+    padding-top: 16px;
+    box-sizing: content-box;
+    border-bottom: 1px solid var(--divider);
+}
+html:has(#main.escr-vue-enabled) .escr-spark-bar {
+    flex: 1 1 0;
+    height: max(2px, var(--h));
+    border-radius: 2px 2px 0 0;
+    background-color: var(--spark-rest);
+}
+html:has(#main.escr-vue-enabled) .escr-spark-bar.is-current {
+    background-color: var(--primary);
+}
+html:has(#main.escr-vue-enabled) .escr-spark-bar.is-zero {
+    height: 0;
+}
+html:has(#main.escr-vue-enabled) .escr-spark-bar:hover {
+    opacity: 0.75;
+}
+html:has(#main.escr-vue-enabled) .escr-spark-axis {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    color: var(--text3);
+    font-size: 11px;
+    line-height: 14px;
+}
+
+/* ---- tasks per day: a column per day, one axis ---- */
+html:has(#main.escr-vue-enabled) .escr-chart {
+    --plot: 168px;
+    --label: 22px;
+    position: relative;
+    display: flex;
+    gap: 8px;
+    margin-top: 18px;
+}
+/* the ticks and their hairlines, behind the columns */
+html:has(#main.escr-vue-enabled) .escr-chart-ticks {
+    display: flex;
+    flex-flow: column;
+    justify-content: space-between;
+    height: var(--plot);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--text3);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    line-height: 0;
+    text-align: right;
+    min-width: 16px;
+}
+html:has(#main.escr-vue-enabled) .escr-chart-ticks li {
+    position: relative;
+    height: 0;
+}
+html:has(#main.escr-vue-enabled) .escr-chart-cols {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+/* hairlines at the ticks (top, middle), the baseline a step darker */
+html:has(#main.escr-vue-enabled) .escr-chart-cols::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: var(--plot);
+    border-top: 1px solid var(--divider);
+    border-bottom: 1px solid var(--background2-darker);
+    background: linear-gradient(var(--divider), var(--divider)) 0 50% / 100% 1px no-repeat;
+    box-sizing: border-box;
+    pointer-events: none;
+}
+html:has(#main.escr-vue-enabled) .escr-chart-col {
+    position: relative;
+    display: flex;
+    flex: 1 1 0;
+    flex-flow: column;
+    align-items: center;
+    min-width: 0;
+    outline: none;
+    cursor: default;
+}
+html:has(#main.escr-vue-enabled) .escr-chart-slot {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    width: 100%;
+    height: var(--plot);
+    border-radius: 6px 6px 0 0;
+}
+/* the hovered or focused day: a ghost wash behind its column */
+html:has(#main.escr-vue-enabled) .escr-chart-col:is(:hover, :focus) .escr-chart-slot {
+    background-color: var(--nav-hover);
+}
+html:has(#main.escr-vue-enabled) .escr-chart-col:focus-visible .escr-chart-slot {
+    box-shadow: inset 0 0 0 2px var(--primary-focus);
+}
+html:has(#main.escr-vue-enabled) .escr-chart-bar {
+    width: min(24px, 60%);
+    height: var(--h);
+    min-height: 2px;
+    border-radius: 4px 4px 0 0;
+    background-color: var(--primary);
+}
+html:has(#main.escr-vue-enabled) .escr-chart-col:is(:hover, :focus) .escr-chart-bar {
+    background-color: var(--primary-dark);
+}
+html:has(#main.escr-vue-enabled) .escr-chart-label {
+    height: var(--label);
+    padding-top: 6px;
+    overflow: hidden;
+    color: var(--text3);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    line-height: 16px;
+    white-space: nowrap;
+}
+html:has(#main.escr-vue-enabled) .escr-chart-col.is-today .escr-chart-label {
+    color: var(--text1);
+    font-weight: 600;
+}
+html:has(#main.escr-vue-enabled) .escr-chart-empty {
+    position: absolute;
+    inset: 0 0 var(--label) 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    color: var(--text3);
+    font-size: 13px;
+}
+/* the tooltip: the figure first, then the day and how its tasks ended */
+html:has(#main.escr-vue-enabled) .escr-chart-tip {
+    position: absolute;
+    bottom: calc(var(--h) + 8px);
+    left: 50%;
+    z-index: 5;
+    display: none;
+    flex-flow: column;
+    gap: 2px;
+    min-width: 132px;
+    padding: 8px 10px;
+    transform: translateX(-50%);
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background-color: var(--background1);
+    box-shadow: 0 8px 24px rgb(9 9 11 / 10%), 0 1px 2px rgb(9 9 11 / 6%);
+    color: var(--text2);
+    font-size: 12px;
+    line-height: 16px;
+    white-space: nowrap;
+    pointer-events: none;
+}
+html:has(#main.escr-vue-enabled) .escr-chart-col:is(:hover, :focus) .escr-chart-tip {
+    display: flex;
+}
+html:has(#main.escr-vue-enabled) .escr-chart-col:nth-child(-n + 2) .escr-chart-tip {
+    left: 0;
+    transform: none;
+}
+html:has(#main.escr-vue-enabled) .escr-chart-col:nth-last-child(-n + 2) .escr-chart-tip {
+    right: 0;
+    left: auto;
+    transform: none;
+}
+html:has(#main.escr-vue-enabled) .escr-chart-tip strong {
+    color: var(--text1);
+    font-size: 13px;
+    font-weight: 600;
+}
+html:has(#main.escr-vue-enabled) .escr-chart-tip-date {
+    margin-bottom: 4px;
+    color: var(--text3);
+}
+html:has(#main.escr-vue-enabled) .escr-chart-tip-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+/* a short stroke keys a state in the tooltip */
+html:has(#main.escr-vue-enabled) .escr-key {
+    flex: none;
+    width: 10px;
+    height: 3px;
+    border-radius: 2px;
+}
+html:has(#main.escr-vue-enabled) :is(.escr-key--finished, .escr-outcome-part--finished) {
+    background-color: var(--state-finished);
+}
+html:has(#main.escr-vue-enabled) :is(.escr-key--active, .escr-outcome-part--active) {
+    background-color: var(--state-active);
+}
+html:has(#main.escr-vue-enabled) :is(.escr-key--failed, .escr-outcome-part--failed) {
+    background-color: var(--state-failed);
+}
+html:has(#main.escr-vue-enabled) :is(.escr-key--canceled, .escr-outcome-part--canceled) {
+    background-color: var(--state-canceled);
+}
+
+/* ---- how they ended: one tall bar, parts with their share, a legend
+   with the counts ---- */
+html:has(#main.escr-vue-enabled) .escr-outcome-bar {
+    display: flex;
+    gap: 2px;
+    height: 28px;
+    margin-top: 16px;
+}
+html:has(#main.escr-vue-enabled) .escr-outcome-bar.is-empty {
+    border-radius: 4px;
+    background-color: var(--background2);
+}
+html:has(#main.escr-vue-enabled) .escr-outcome-part {
+    display: flex;
+    align-items: center;
+    flex: 1 1 0;
+    min-width: 4px;
+    padding: 0 8px;
+    overflow: hidden;
+    border-radius: 4px;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+html:has(#main.escr-vue-enabled) .escr-outcome-legend {
+    margin-top: auto;
+    padding-top: 16px;
+}
+html:has(#main.escr-vue-enabled) .escr-outcome-icon {
+    flex: none;
+}
+html:has(#main.escr-vue-enabled) .escr-outcome--finished .escr-outcome-icon {
+    color: var(--state-finished);
+}
+html:has(#main.escr-vue-enabled) .escr-outcome--active .escr-outcome-icon {
+    color: var(--state-active);
+}
+html:has(#main.escr-vue-enabled) .escr-outcome--failed .escr-outcome-icon {
+    color: var(--state-failed);
+}
+html:has(#main.escr-vue-enabled) .escr-outcome--canceled .escr-outcome-icon {
+    color: var(--state-canceled);
+}
+html:has(#main.escr-vue-enabled) .escr-outcome.is-zero :is(.escr-tile-legend-label, .escr-tile-legend-value) {
+    color: var(--text3);
+    font-weight: 400;
+}
+
+/* the note under the tiles: a quiet line, not a warning */
+html:has(#main.escr-vue-enabled) .escr-tasks-note {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: -4px 0 0;
+    color: var(--text3);
+    font-size: 12px;
+}
+
+/* ---- the list ---- */
+html:has(#main.escr-vue-enabled) .escr-tasks-list {
+    margin-top: 16px;
+}
+html:has(#main.escr-vue-enabled) .escr-tasks-list h2 {
+    margin: 0 0 12px;
+    color: var(--text1);
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 24px;
+}
+html:has(#main.escr-vue-enabled) .escr-tasks-table {
+    margin-bottom: 16px;
+    font-size: 13px;
+}
+html:has(#main.escr-vue-enabled) .escr-tasks-table .escr-num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+html:has(#main.escr-vue-enabled) .escr-tasks-table td {
+    white-space: nowrap;
+}
+html:has(#main.escr-vue-enabled) .escr-tasks-table td.escr-tasks-label {
+    width: 100%;
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+html:has(#main.escr-vue-enabled) .escr-tasks-label a {
+    color: var(--text1);
+    font-weight: 500;
+}
+html:has(#main.escr-vue-enabled) .escr-tasks-label a:hover {
+    color: var(--primary);
+    text-decoration: none;
+}
+html:has(#main.escr-vue-enabled) .escr-tasks-table td.escr-tasks-empty {
+    color: var(--text3);
+}
+html:has(#main.escr-vue-enabled) :is(.escr-tasks, .escr-monitoring) .escr-muted {
+    color: var(--text3);
+}
+
+/* a task's state: its icon in the state's colour, the label in text ink */
+html:has(#main.escr-vue-enabled) .escr-state {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) .escr-state--finished .escr-icon {
+    color: var(--state-finished);
+}
+html:has(#main.escr-vue-enabled) .escr-state--active .escr-icon {
+    color: var(--state-active);
+}
+html:has(#main.escr-vue-enabled) .escr-state--failed .escr-icon {
+    color: var(--state-failed);
+}
+html:has(#main.escr-vue-enabled) .escr-state--canceled .escr-icon {
+    color: var(--state-canceled);
+}
+@media (prefers-reduced-motion: no-preference) {
+    html:has(#main.escr-vue-enabled) .escr-state--active .escr-icon:has(path[d^="M21 12a9"]) {
+        animation: escr-spin 1.2s linear infinite;
+    }
+}
+@keyframes escr-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ---- a task's page ---- */
+html:has(#main.escr-vue-enabled) .escr-task {
+    gap: 0;
+}
+html:has(#main.escr-vue-enabled) .escr-task-back {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: 6px;
+    margin-bottom: 12px;
+    color: var(--text2);
+    font-size: 13px;
+}
+html:has(#main.escr-vue-enabled) .escr-task-back:hover {
+    color: var(--text1);
+    text-decoration: none;
+}
+html:has(#main.escr-vue-enabled) .escr-task h1 {
+    margin-bottom: 8px;
+    overflow-wrap: anywhere;
+}
+html:has(#main.escr-vue-enabled) .escr-task-state {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 24px;
+    font-size: 14px;
+}
+html:has(#main.escr-vue-enabled) .escr-task-state .escr-state {
+    font-weight: 600;
+}
+html:has(#main.escr-vue-enabled) .escr-task-state a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text2);
+}
+html:has(#main.escr-vue-enabled) .escr-task-state a:hover {
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) .escr-task-sep {
+    color: var(--text3);
+}
+/* the facts: one tile, a column each */
+html:has(#main.escr-vue-enabled) .escr-task-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    margin: 0 0 32px;
+    border: 1px solid var(--divider);
+    border-radius: 12px;
+    background-color: var(--background1);
+}
+html:has(#main.escr-vue-enabled) .escr-task-fact {
+    padding: 14px 18px 16px;
+}
+html:has(#main.escr-vue-enabled) .escr-task-fact + .escr-task-fact {
+    box-shadow: inset 1px 0 0 var(--divider);
+}
+html:has(#main.escr-vue-enabled) .escr-task-fact dt {
+    margin-bottom: 4px;
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 600;
+}
+html:has(#main.escr-vue-enabled) .escr-task-fact dd {
+    margin: 0;
+    color: var(--text1);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 22px;
+}
+html:has(#main.escr-vue-enabled) .escr-task-fact-hint {
+    display: block;
+    color: var(--text3);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 16px;
+}
+html:has(#main.escr-vue-enabled) .escr-task-log h2 {
+    margin: 0 0 12px;
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 24px;
+}
+html:has(#main.escr-vue-enabled) .escr-task-log pre {
+    max-height: 60vh;
+    margin: 0;
+    padding: 14px 16px;
+    overflow: auto;
+    border: 1px solid var(--divider);
+    border-radius: 12px;
+    background-color: var(--background2);
+    color: var(--text1);
+    font-size: 12.5px;
+    line-height: 20px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+html:has(#main.escr-vue-enabled) .escr-task-log p {
+    font-size: 13px;
+}
+
+/* ---- pagination of Django lists: quiet controls on the 32px scale ---- */
+html:has(#main.escr-vue-enabled) main:not(:has(.escr-page)) .pagination {
+    gap: 6px;
+    align-items: center;
+}
+html:has(#main.escr-vue-enabled) main:not(:has(.escr-page)) .pagination .page-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-width: 32px;
+    height: 32px;
+    margin: 0;
+    padding: 0 10px;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background-color: var(--background1);
+    color: var(--text1);
+    font-size: 13px;
+    line-height: 1;
+}
+html:has(#main.escr-vue-enabled) main:not(:has(.escr-page)) .pagination .page-link:hover {
+    border-color: var(--background2-darker);
+    background-color: var(--background1);
+    text-decoration: none;
+}
+html:has(#main.escr-vue-enabled) main:not(:has(.escr-page)) .pagination select.page-link {
+    padding-right: 8px;
+    cursor: pointer;
+}
+html:has(#main.escr-vue-enabled) main:not(:has(.escr-page)) .pagination .page-link:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-focus);
+    outline: none;
+}
+
+/* ---- Task Monitoring (vue/components/TaskMonitoring) ---- */
+html:has(#main.escr-vue-enabled) .escr-monitoring {
+    padding: 8px 0 32px;
+}
+html:has(#main.escr-vue-enabled) .escr-monitoring-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+html:has(#main.escr-vue-enabled) .escr-monitoring-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+html:has(#main.escr-vue-enabled) :is(.escr-monitoring-select select, .escr-monitoring-search input) {
+    box-sizing: border-box;
+    height: 32px;
+    margin: 0;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background-color: var(--background1);
+    color: var(--text1);
+    font-size: 13px;
+}
+html:has(#main.escr-vue-enabled) .escr-monitoring-select select {
+    min-width: 140px;
+    padding: 0 30px 0 10px;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-position: right 10px center;
+    background-repeat: no-repeat;
+    cursor: pointer;
+}
+html:has(#main.escr-vue-enabled) .escr-monitoring-search {
+    position: relative;
+}
+html:has(#main.escr-vue-enabled) .escr-monitoring-search .escr-icon {
+    position: absolute;
+    top: 50%;
+    left: 10px;
+    width: 15px;
+    height: 15px;
+    transform: translateY(-50%);
+    color: var(--text3);
+    pointer-events: none;
+}
+html:has(#main.escr-vue-enabled) .escr-monitoring-search input {
+    width: 240px;
+    padding: 0 10px 0 32px;
+}
+html:has(#main.escr-vue-enabled) .escr-monitoring-search input::placeholder {
+    color: var(--text3);
+}
+html:has(#main.escr-vue-enabled) :is(.escr-monitoring-select select, .escr-monitoring-search input):hover {
+    border-color: var(--background2-darker);
+}
+html:has(#main.escr-vue-enabled) :is(.escr-monitoring-select select, .escr-monitoring-search input):focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-focus);
+    outline: none;
+}
+html:has(#main.escr-vue-enabled) .escr-monitoring-table {
+    margin-bottom: 16px;
+    font-size: 13px;
+    transition: opacity 0.15s;
+}
+/* refetching keeps the rows, dimmed */
+html:has(#main.escr-vue-enabled) .escr-monitoring-table.is-loading tbody {
+    opacity: 0.55;
+}
+html:has(#main.escr-vue-enabled) .escr-monitoring-table td {
+    white-space: nowrap;
+}
+html:has(#main.escr-vue-enabled) .escr-monitoring-table .escr-monitoring-check {
+    width: 40px;
+    padding-right: 0;
+}
+html:has(#main.escr-vue-enabled) .escr-monitoring-table td.escr-monitoring-name {
+    width: 40%;
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+html:has(#main.escr-vue-enabled) .escr-monitoring-name a {
+    color: var(--text1);
+    font-weight: 500;
+}
+html:has(#main.escr-vue-enabled) .escr-monitoring-name a:hover {
+    color: var(--primary);
+    text-decoration: none;
+}
+html:has(#main.escr-vue-enabled) .escr-monitoring-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+html:has(#main.escr-vue-enabled) .escr-monitoring-stats .escr-icon {
+    width: 14px;
+    height: 14px;
+}
+html:has(#main.escr-vue-enabled) .escr-monitoring-actions {
+    text-align: right;
+}
+html:has(#main.escr-vue-enabled) .escr-monitoring-table td.escr-monitoring-empty {
+    color: var(--text3);
+}
+html:has(#main.escr-vue-enabled) .escr-monitoring-pages {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+}
+html:has(#main.escr-vue-enabled) .escr-monitoring-page {
+    color: var(--text2);
+    font-size: 13px;
+}
+html:has(#main.escr-vue-enabled) .escr-monitoring-modal-list {
+    display: flex;
+    flex-flow: column;
+    gap: 6px;
+    max-height: 240px;
+    margin: 12px 0 0;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+    font-size: 14px;
+}
+html:has(#main.escr-vue-enabled) .escr-monitoring-modal-list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+/* ---- My Exports (vue/pages/Exports) ---- */
+html:has(#main.escr-vue-enabled) .escr-exports {
+    padding-bottom: 32px;
+}
+html:has(#main.escr-vue-enabled) .escr-exports-intro {
+    margin: -4px 0 20px;
+    color: var(--text2);
+    font-size: 13px;
+}
+html:has(#main.escr-vue-enabled) .escr-exports-error {
+    color: var(--alert);
+    font-size: 13px;
+}
+html:has(#main.escr-vue-enabled) .escr-exports-empty {
+    display: flex;
+    flex-flow: column;
+    align-items: center;
+    gap: 4px;
+    padding: 56px 24px;
+    border: 1px dashed var(--divider);
+    border-radius: 12px;
+    color: var(--text1);
+    font-size: 14px;
+    text-align: center;
+}
+html:has(#main.escr-vue-enabled) .escr-exports-empty p {
+    margin: 0;
+}
+html:has(#main.escr-vue-enabled) .escr-exports-empty .escr-icon {
+    width: 28px;
+    height: 28px;
+    margin-bottom: 8px;
+    color: var(--text3);
+}
+html:has(#main.escr-vue-enabled) .escr-exports-empty-hint {
+    color: var(--text3);
+    font-size: 13px;
+}
+html:has(#main.escr-vue-enabled) .escr-exports-table {
+    margin-bottom: 16px;
+    font-size: 13px;
+    transition: opacity 0.15s;
+}
+html:has(#main.escr-vue-enabled) .escr-exports-table.is-loading tbody {
+    opacity: 0.55;
+}
+html:has(#main.escr-vue-enabled) .escr-exports-table td {
+    white-space: nowrap;
+}
+html:has(#main.escr-vue-enabled) .escr-exports-table .escr-num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+html:has(#main.escr-vue-enabled) .escr-exports-table td.escr-exports-label {
+    width: 100%;
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* the file type, as a small tag before the name */
+html:has(#main.escr-vue-enabled) .escr-exports-type {
+    display: inline-block;
+    min-width: 40px;
+    margin-right: 10px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background-color: var(--background2);
+    color: var(--text2);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 16px;
+    text-align: center;
+    vertical-align: middle;
+}
+html:has(#main.escr-vue-enabled) .escr-exports-name {
+    color: var(--text1);
+    font-weight: 500;
+}
+html:has(#main.escr-vue-enabled) .escr-exports-table tr.is-expired :is(.escr-exports-name, td) {
+    color: var(--text3);
+}
+html:has(#main.escr-vue-enabled) .escr-exports-expired {
+    color: var(--text3);
+}
+html:has(#main.escr-vue-enabled) .escr-exports-actions {
+    text-align: right;
+}
+html:has(#main.escr-vue-enabled) .escr-exports-actions > * {
+    display: inline-flex;
+    vertical-align: middle;
+}
+html:has(#main.escr-vue-enabled) .escr-exports-actions a.escr-button {
+    text-decoration: none;
+}
+html:has(#main.escr-vue-enabled) .escr-exports-actions .escr-button + .escr-button {
+    margin-left: 4px;
+}
+html:has(#main.escr-vue-enabled) .escr-exports-delete {
+    width: 28px;
+    padding: 0;
+    color: var(--text2);
+}
+html:has(#main.escr-vue-enabled) .escr-exports-delete:hover {
+    color: var(--alert);
+}

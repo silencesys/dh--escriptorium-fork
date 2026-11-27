@@ -1,0 +1,12 @@
+/*
+ * Stroke icons: older rules colour icons with `fill` (e.g. `.escr-button svg`),
+ * which would turn these outlines into solid shapes.
+ */
+svg.escr-icon,
+svg.escr-icon * {
+    fill: none !important;
+}
+svg.escr-icon {
+    flex: none;
+    stroke: currentColor;
+}

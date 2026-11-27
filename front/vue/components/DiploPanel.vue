@@ -105,7 +105,7 @@
                             :on-change="toggleSort"
                         >
                             <template #button-icon>
-                                <i class="fas fa-sort"></i>
+                                <LineOrderingIcon />
                             </template>
                         </ToggleButton>
                         <template #popper>
@@ -296,23 +296,27 @@
 
 <script>
 import { nextTick } from "vue";
+import { fitKeyboardOnFocus } from "./VirtualKeyboard/fitKeyboard";
 import { mapActions, mapMutations, mapState } from "vuex";
 import { Dropdown as VDropdown } from "floating-vue";
 import { Recogito } from "@recogito/recogito-js";
 import { debounce, groupBy } from "lodash";
 import { BasePanel , AnnoPanel } from "../../src/editor/mixins.js";
-import ChevronDownIcon from "./Icons/ChevronDownIcon/ChevronDownIcon.vue";
-import CopyIcon from "./Icons/CopyIcon/CopyIcon.vue";
 import EscrButton from "./Button/Button.vue";
-import KeyboardIcon from "./Icons/KeyboardIcon/KeyboardIcon.vue";
-import LineOrderingIcon from "./Icons/LineOrderingIcon/LineOrderingIcon.vue";
 import DiploLine from "./DiploLine.vue";
 import EditorToolbar from "./EditorToolbar/EditorToolbar.vue";
 import GroupedLine from "../components/GroupedLine/GroupedLine.vue";
-import RegionsIcon from "./Icons/RegionsIcon/RegionsIcon.vue";
 import ToggleButton from "./ToggleButton/ToggleButton.vue";
 import TranscriptionDropdown from "./EditorTranscriptionDropdown/EditorTranscriptionDropdown.vue";
 import "../components/Common/Annotation.css";
+import { ArrowDownUp, ChevronDown, Copy, Keyboard, LayoutTemplate } from "lucide";
+import lucideIcon from "./Icons/Lucide/lucideIcon";
+
+const ChevronDownIcon = lucideIcon(ChevronDown);
+const CopyIcon = lucideIcon(Copy);
+const KeyboardIcon = lucideIcon(Keyboard);
+const LineOrderingIcon = lucideIcon(ArrowDownUp);
+const RegionsIcon = lucideIcon(LayoutTemplate);
 
 export default {
     components: {
@@ -503,6 +507,7 @@ export default {
 
     beforeDestroy() {
         window.removeEventListener("resize", this.recalculatePanelHeight);
+        document.removeEventListener("selectionchange", this.markCurrentLine);
         if (this.$refs.diplomaticLines) {
             this.$refs.diplomaticLines.removeEventListener("copy", this.handleCopy);
         }
@@ -856,14 +861,36 @@ export default {
 
         startEdit() {
             this.setBlockShortcuts(true);
+            if (!this.legacyModeEnabled) {
+                document.addEventListener("selectionchange", this.markCurrentLine);
+                this.markCurrentLine();
+            }
         },
 
         stopEdit() {
+            if (!this.legacyModeEnabled) {
+                document.removeEventListener("selectionchange", this.markCurrentLine);
+                this.setCurrentLine(null);
+            }
             if (this.isRegionsModeEnabled || !this.isEditorOpen) {
                 this.setBlockShortcuts(false);
             }
             this.constrainLineNumber();
             this.save();
+        },
+
+        /** New UI: highlight the line that holds the caret. */
+        markCurrentLine() {
+            const node = window.getSelection()?.anchorNode;
+            const el = node && (node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement);
+            this.setCurrentLine(el?.closest("#diplomatic-lines > div") || null);
+        },
+
+        setCurrentLine(line) {
+            if (line === this.currentLineEl) return;
+            this.currentLineEl?.classList.remove("escr-current-line");
+            line?.classList.add("escr-current-line");
+            this.currentLineEl = line;
         },
 
         onDraggingEnd(ev) {
@@ -1286,6 +1313,8 @@ export default {
                 enableVirtualKeyboard(div);
                 div.vkOnfocus = div.onfocus;
             }
+            // new UI: the keyboard spans the panel's text
+            if (!this.legacyModeEnabled) fitKeyboardOnFocus(div, this.$refs.diplomaticLines);
         },
 
         deactivateVK(div) {
@@ -1371,10 +1400,10 @@ export default {
          * into account.
          */
         recalculatePanelHeight() {
-            let newHeight = "100vh - 180px";
+            let newHeight = "100vh - var(--editor-top) - 54px";
             if (this.$refs.annotationToolbar) {
                 const toolbarHeight = this.$refs.annotationToolbar.clientHeight;
-                newHeight = `100vh - 180px - ${toolbarHeight}px`;
+                newHeight = `100vh - var(--editor-top) - 54px - ${toolbarHeight}px`;
             }
             this.$refs.contentContainer.style.setProperty("min-height", `calc(${newHeight})`);
             this.$refs.contentContainer.style.setProperty("max-height", `calc(${newHeight})`);

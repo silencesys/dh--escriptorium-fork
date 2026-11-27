@@ -81,12 +81,7 @@ import ImportImagesForm from "./ImportImagesForm.vue";
 import ImportMETSForm from "./ImportMETSForm.vue";
 import ImportPDFForm from "./ImportPDFForm.vue";
 import ImportXMLForm from "./ImportXMLForm.vue";
-import IIIFIcon from "../Icons/IIIFIcon/IIIFIcon.vue";
-import ImagesIcon from "../Icons/ImagesIcon/ImagesIcon.vue";
-import METSIcon from "../Icons/METSIcon/METSIcon.vue";
-import PDFIcon from "../Icons/PDFIcon/PDFIcon.vue";
-import XIcon from "../Icons/XIcon/XIcon.vue";
-import XMLIcon from "../Icons/XMLIcon/XMLIcon.vue";
+import { IIIFIcon, ImagesIcon, METSIcon, PDFIcon, XIcon, XMLIcon } from "../Icons/Lucide/icons";
 import "./ImportModal.css";
 
 export default {

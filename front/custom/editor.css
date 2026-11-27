@@ -1,0 +1,606 @@
+/*
+ * Editor: every section (toolbar, panel headers, panels) sits on the page
+ * background, separated by hairlines instead of shadows and grey bands.
+ * The panels' stages and paper are set further down (Stages).
+ */
+html:has(#main.escr-vue-enabled) main:has(#escr-editor),
+html:has(#main.escr-vue-enabled) #escr-editor .escr-toolbar,
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .content-container {
+    background-color: var(--background);
+}
+/*
+ * Hairlines are shadows, so the bar heights don't change. The title bar has
+ * none; the panels get one above and below their bars, so the line above the
+ * editors spans the content width (not the page under the sidebar).
+ */
+html:has(#main.escr-vue-enabled) #escr-editor .escr-toolbar {
+    box-shadow: 0 1px 0 var(--divider);
+}
+html:has(#main.escr-vue-enabled) #escr-editor .escr-editor-global-toolbar {
+    box-shadow: none;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar {
+    box-shadow: inset 0 1px 0 var(--divider), 0 1px 0 var(--divider);
+}
+html:has(#main.escr-vue-enabled) #escr-editor .js-zoom-target {
+    box-shadow: none;
+}
+html:has(#main.escr-vue-enabled) div.escr-editor-tabcontent .marginless.row div.col.panel:not(:first-of-type) {
+    border-left: 1px solid var(--divider);
+}
+/* pager: arrow, page number, "/ count", arrow, evenly spaced; the number
+   box fits the count's digits and shows itself only on hover and focus */
+html:has(#main.escr-vue-enabled) #escr-editor .escr-editor-nav-actions .element-switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0 4px;
+    font-size: 15px;
+    font-variant-numeric: tabular-nums;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .escr-editor-nav-actions .element-switcher > input {
+    box-sizing: content-box;
+    width: calc(var(--digits, 2) * 1ch);
+    min-width: 0;
+    max-width: none;
+    height: 32px;
+    padding: 0 6px;
+    border: none;
+    border-radius: 8px;
+    background-color: transparent;
+    font: inherit;
+    text-align: center;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .escr-editor-nav-actions .element-switcher > input:hover {
+    background-color: var(--nav-hover);
+}
+html:has(#main.escr-vue-enabled) #escr-editor .escr-editor-nav-actions .element-switcher > input:focus-visible {
+    outline: none;
+    background-color: var(--background1);
+    box-shadow: 0 0 0 1px var(--primary), 0 0 0 4px var(--primary-focus);
+}
+
+/* controls in the bars: no fills of their own, only hover and selected states */
+html:has(#main.escr-vue-enabled) #escr-editor :is(nav.escr-editor-nav, .escr-toolbar) :is(
+    .escr-button--text,
+    .escr-button--text-alt,
+    .escr-toggle-button:not([class*="escr-toggle-button--active"]),
+    .escr-segmented-button-group input:not(:checked) + label,
+    .escr-segmented-button-group input:not(:checked) + div > label,
+    .escr-editortools-close,
+    select
+) {
+    background-color: transparent;
+}
+html:has(#main.escr-vue-enabled) #escr-editor :is(nav.escr-editor-nav, .escr-toolbar) :is(
+    .escr-button--text:not(:disabled),
+    .escr-button--text-alt:not(:disabled),
+    .escr-toggle-button:not([class*="escr-toggle-button--active"]):not(.escr-toggle-button--disabled),
+    .escr-segmented-button-group input:not(:checked) + label,
+    .escr-segmented-button-group input:not(:checked) + div > label
+):hover {
+    background-color: var(--nav-hover);
+}
+
+/* every button in the bars is a pill of its own, also inside groups */
+html:has(#main.escr-vue-enabled) #escr-editor .escr-toolbar :is(
+    .escr-button,
+    .escr-toggle-button,
+    .escr-segmented-button-group label
+) {
+    border-radius: 8px !important;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .escr-toolbar :is(
+    .escr-segmented-button-group,
+    .seg-toolbar-btn-group
+) {
+    gap: 2px;
+    overflow: visible;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .escr-toolbar .escr-segmented-button-group label {
+    margin: 0;
+}
+
+/* panels share the page's hard edges: the breadcrumbs on the left, the avatar on the right */
+html:has(#main.escr-vue-enabled) div.escr-editor-tabcontent .marginless.row,
+html:has(#main.escr-vue-enabled) #escr-editor .escr-editor-global-toolbar {
+    padding: 0 20px 0 var(--page-gutter-start);
+}
+/* panels share the row equally, whatever their content: a bar that doesn't fit scrolls (below) */
+html:has(#main.escr-vue-enabled) div.escr-editor-tabcontent .marginless.row > .col.panel {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: none;
+}
+
+/*
+ * One meaning per highlight, everywhere in the editor bars:
+ *   resting         neutral icon, no fill
+ *   hover           neutral tint
+ *   on / selected   soft accent fill, accent icon (active tool, chosen mode,
+ *                   enabled toggle)
+ * One-off actions (e.g. "calculate masks") are never filled.
+ */
+html:has(#main.escr-vue-enabled) #escr-editor .escr-toolbar :is(
+    .escr-button--text,
+    .escr-button--text-alt,
+    .escr-button--primary,
+    .escr-toggle-button,
+    .escr-segmented-button-group label
+) {
+    color: var(--text2);
+    border-color: transparent;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .escr-toolbar .escr-button--primary {
+    background-color: transparent;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .escr-toolbar :is(
+    .escr-button--text:not(:disabled),
+    .escr-button--text-alt:not(:disabled),
+    .escr-button--primary:not(:disabled),
+    .escr-toggle-button:not(.escr-toggle-button--disabled),
+    .escr-segmented-button-group label
+):hover {
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) #escr-editor .escr-toolbar :is(
+    .escr-toggle-button[class*="escr-toggle-button--active"],
+    .escr-segmented-button-group input:checked + label,
+    .escr-segmented-button-group input:checked + div > label
+),
+html:has(#main.escr-vue-enabled) #escr-editor .escr-toolbar :is(
+    .escr-toggle-button[class*="escr-toggle-button--active"],
+    .escr-segmented-button-group input:checked + label,
+    .escr-segmented-button-group input:checked + div > label
+):hover {
+    background-color: var(--selected-background);
+    color: var(--primary);
+}
+html:has(#main.escr-vue-enabled) #escr-editor .escr-toolbar :is(.escr-button, .escr-toggle-button):disabled,
+html:has(#main.escr-vue-enabled) #escr-editor .escr-toolbar .escr-toggle-button--disabled {
+    color: var(--text3);
+}
+
+/* compact icon buttons, so a panel's tools fit on one row */
+html:has(#main.escr-vue-enabled) #escr-editor .escr-toolbar :is(
+    .escr-button--icon-only,
+    .escr-toggle-button,
+    .escr-segmented-button-group label
+) {
+    box-sizing: border-box;
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    min-height: 32px;
+    padding: 0;
+    justify-content: center;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .escr-toolbar .new-section {
+    margin-left: 6px;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .escr-toolbar .new-section.with-separator::before {
+    padding-left: 6px;
+    border-left-color: var(--divider);
+}
+/* tooltip wrappers of the mode buttons: no baseline gap, so all buttons share one line */
+html:has(#main.escr-vue-enabled) #escr-editor .escr-toolbar .escr-segmented-button-group .v-popper {
+    display: flex;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .escr-toolbar .escr-segmented-button-group {
+    height: 32px;
+}
+
+/*
+ * Stages: what sits below a panel's bar says what the panel works on.
+ * Image panels (segmentation, image annotation) put the scan on a stage a
+ * step darker than the page; the transcription lays a sheet of paper on that
+ * stage exactly where the image sits, and the text panel is all paper.
+ * The paper and its ink follow the theme (inverted in dark mode).
+ */
+html:has(#main.escr-vue-enabled) #escr-editor :is(
+    .col.panel:has(#seg-zoom-container),
+    #source-panel,
+    #transcription-panel
+) .content-container {
+    background-color: var(--stage-image);
+}
+/* the transcription page: a sheet of paper exactly where the image sits */
+html:has(#main.escr-vue-enabled) #escr-editor #transcription-panel #visu-zoom-container {
+    background-color: var(--stage-text);
+}
+html:has(#main.escr-vue-enabled) #escr-editor #diplo-panel .content-container {
+    background-color: var(--stage-text);
+}
+/* ink on the paper follows the theme (upstream: black text, grey/blue SVG lines) */
+html:has(#main.escr-vue-enabled) #escr-editor #diplo-panel {
+    color: var(--stage-text-ink);
+}
+html:has(#main.escr-vue-enabled) #escr-editor #visu-zoom-container svg text {
+    fill: var(--stage-text-ink);
+}
+html:has(#main.escr-vue-enabled) #escr-editor #visu-zoom-container svg polygon[stroke="lightgrey"] {
+    stroke: var(--stage-text-rule);
+}
+html:has(#main.escr-vue-enabled) #escr-editor #visu-zoom-container svg path[stroke="blue"] {
+    stroke: var(--stage-text-baseline);
+}
+
+/*
+ * Panel bars are always one row of fixed height: tools that don't fit in a
+ * narrow panel scroll sideways instead of wrapping (a taller bar would push
+ * the panel's stage out of the viewport). Switcher and close stay in place.
+ */
+html:has(#main.escr-vue-enabled) #escr-editor {
+    --panel-bar-height: 46px; /* 32px controls, 7px above and below */
+}
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar {
+    flex-wrap: nowrap;
+    align-items: center;
+    height: var(--panel-bar-height);
+    min-height: 0; /* upstream: 54px */
+}
+html:has(#main.escr-vue-enabled) #escr-editor div.escr-editor-tabcontent .col.panel :is(.content-container, .js-wheelzoom-container) {
+    min-height: calc(100vh - var(--editor-top) - var(--panel-bar-height));
+    max-height: calc(100vh - var(--editor-top) - var(--panel-bar-height));
+}
+html:has(#main.escr-vue-enabled) #escr-editor div.escr-editor-tabcontent #diplo-panel .content-container {
+    max-height: calc(100vh - var(--editor-top) - var(--panel-bar-height));
+}
+/* EditorToolbar wraps the tools in a scroller: no scrollbar, anchors instead */
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .escr-toolbar-tools {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 100%;
+    margin-left: 8px;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .escr-toolbar-scroller {
+    display: flex;
+    height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .escr-toolbar-scroller::-webkit-scrollbar {
+    display: none;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .escr-editortools-paneltools {
+    flex: 1 0 auto;
+    min-width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0 2px;
+}
+/* scroll anchors: a chevron over a fade from the bar's background */
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .escr-toolbar-anchor {
+    position: absolute;
+    top: 1px; /* keep the bar's hairlines visible */
+    bottom: 1px;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    width: 44px;
+    padding: 0 4px;
+    border: none;
+    color: var(--text2);
+    cursor: pointer;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .escr-toolbar-anchor-start {
+    left: 0;
+    justify-content: flex-start;
+    background: linear-gradient(to right, var(--background) 45%, transparent);
+}
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .escr-toolbar-anchor-end {
+    right: 0;
+    justify-content: flex-end;
+    background: linear-gradient(to left, var(--background) 45%, transparent);
+}
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .escr-toolbar-anchor svg {
+    width: 18px;
+    height: 18px;
+    border-radius: 6px;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .escr-toolbar-anchor:hover {
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar :is(
+    .escr-editortools-paneltools,
+    .escr-editortools-paneltools .new-section
+) {
+    flex-wrap: nowrap;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .escr-editortools-paneltools > :not(.escr-elements-filter),
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .new-section > * {
+    flex-shrink: 0;
+}
+/* compact panel switcher (icon + chevron) and close button */
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .escr-editortools-switcher {
+    flex: none;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .escr-editortools-switcher button {
+    width: auto; /* icon + chevron: not a square icon button */
+    height: 32px;
+    padding: 0 8px;
+    gap: 4px;
+    border-radius: 8px;
+}
+/* transcription switcher: a quiet 32px control like the buttons around it */
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar select {
+    height: 32px;
+    padding: 0 24px 0 8px;
+    border: none;
+    border-radius: 8px;
+    background-color: transparent;
+    background-position: right 8px center;
+    font-size: 14px;
+    color: var(--text1);
+    cursor: pointer;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar select:hover {
+    background-color: var(--nav-hover);
+}
+/* its wrapper is as tall as the control (inline content made it 38px) */
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .escr-dropdown:has(> select) {
+    display: flex;
+    align-items: center;
+    position: relative;
+    height: 32px;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar select {
+    line-height: 32px;
+}
+/* no extra margin after the last tools: the close button keeps an even gap */
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .escr-confidence-control {
+    margin-right: 0;
+}
+/* its chevron, centred on the 32px control */
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .escr-dropdown:has(> select) > svg {
+    top: 50%;
+    right: 4px;
+    width: 16px;
+    height: 16px;
+    transform: translateY(-50%);
+    color: var(--text2);
+}
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .escr-editortools-switcher button svg + svg {
+    width: 14px;
+    height: 14px;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .escr-editortools-close {
+    flex: none;
+    align-items: center;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .escr-editortools-close button {
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .escr-editortools-close button:hover {
+    background-color: var(--nav-hover);
+    color: var(--text1);
+}
+
+/*
+ * Line transcription modal: a centred card over a dimmed page (upstream
+ * pins it as a pane over the work area). The dialog fits the viewport and
+ * its body scrolls; the backdrop is Bootstrap's, coloured by the theme.
+ */
+html:has(#main.escr-vue-enabled) .modal-backdrop {
+    background-color: var(--modal-backdrop);
+}
+html:has(#main.escr-vue-enabled) .modal-backdrop.show {
+    opacity: 1;
+}
+html:has(#main.escr-vue-enabled) #trans-modal.escr-line-modal {
+    inset: 0;
+    padding: 32px !important;
+    overflow: hidden;
+    z-index: 1050; /* above Bootstrap's backdrop (1040) */
+}
+html:has(#main.escr-vue-enabled) #trans-modal.escr-line-modal .modal-dialog {
+    display: flex;
+    align-items: flex-start; /* opens towards the top, like a command palette */
+    width: min(1120px, 100%);
+    max-width: none;
+    height: 100%;
+    margin: 0 auto;
+}
+html:has(#main.escr-vue-enabled) #trans-modal.escr-line-modal .modal-content {
+    height: auto;
+    max-height: calc(100% - 6vh);
+    margin-top: 6vh;
+    overflow: hidden;
+    border: 1px solid var(--divider);
+    border-radius: 16px;
+    box-shadow: 0 24px 64px rgb(0 0 0 / 24%);
+}
+html:has(#main.escr-vue-enabled) #trans-modal .escr-line-modal-header {
+    gap: 2px;
+    padding: 12px 12px 12px 24px;
+    border-bottom: 1px solid var(--divider);
+}
+html:has(#main.escr-vue-enabled) #trans-modal .escr-line-modal-header h2 {
+    margin-right: 16px;
+    font-size: 18px;
+    font-weight: 600;
+}
+html:has(#main.escr-vue-enabled) #trans-modal.escr-line-modal .modal-body {
+    padding: 20px 24px 24px;
+}
+html:has(#main.escr-vue-enabled) #trans-modal.escr-line-modal #modal-img-container {
+    border-radius: 10px;
+    background-color: var(--stage-image);
+}
+html:has(#main.escr-vue-enabled) #trans-modal #trans-input-container {
+    margin-top: 16px;
+}
+html:has(#main.escr-vue-enabled) #trans-modal :is(#trans-input, #textInputBorderWrapper) {
+    box-sizing: border-box; /* as wide as the image, padding included */
+    border: 1px solid var(--divider);
+    border-radius: 10px;
+    background-color: var(--stage-text);
+    color: var(--stage-text-ink);
+    box-shadow: none;
+}
+html:has(#main.escr-vue-enabled) #trans-modal :is(#trans-input:focus, #textInputBorderWrapper:focus-within) {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-focus);
+}
+html:has(#main.escr-vue-enabled) #trans-modal #trans-input-container small.text-muted {
+    font-size: 12.5px;
+    color: var(--text3) !important;
+}
+html:has(#main.escr-vue-enabled) #trans-modal.escr-line-modal hr {
+    margin: 16px 0 8px;
+    border-top-color: var(--divider);
+}
+html:has(#main.escr-vue-enabled) #trans-modal.escr-line-modal details summary > span {
+    font-weight: 500;
+}
+
+/*
+ * Toolbar spacing: buttons keep 12px off the seams between panels, while the
+ * editor's first and last buttons stay on the content edges; controls are
+ * 4px apart, tool groups (and their separators) 8px.
+ */
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar {
+    padding: 0 12px;
+}
+html:has(#main.escr-vue-enabled) #escr-editor div.escr-editor-tabcontent .marginless.row > .col.panel:first-of-type .escr-toolbar {
+    padding-left: 0;
+}
+html:has(#main.escr-vue-enabled) #escr-editor div.escr-editor-tabcontent .marginless.row > .col.panel:last-of-type .escr-toolbar {
+    padding-right: 0;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .escr-editortools-switcher {
+    margin: 0;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar :is(
+    .escr-editortools-paneltools,
+    .escr-editortools-paneltools .new-section
+) {
+    gap: 4px;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .new-section {
+    margin-left: 4px; /* + the 4px gap */
+}
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .new-section.with-separator::before {
+    padding-left: 0;
+    margin-right: 4px; /* + the gap: 8px on each side of the separator */
+}
+/* the close button is its own group, 8px after the tools (2px of which is
+   the tools' padding); its tooltip wrapper repeats the class, so no margin there */
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar > .escr-editortools-close {
+    flex: none;
+    width: auto;
+    margin-left: 6px;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .escr-editortools-close .escr-editortools-close {
+    margin: 0;
+}
+
+/* line ordering toggle: upstream gives it 16px + 4px margins, the bar's gaps are enough */
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .sort-mode-toggle.escr-toggle-button {
+    margin: 0;
+}
+/* keyboard toggle: the last tool, no extra margin (kept it past the visible end) */
+html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .vk-container {
+    flex: none;
+    margin-right: 0;
+}
+
+/*
+ * Text / Line Ordering: the line numbers sit in a gutter outside the text
+ * flow, so the caret always starts after the number; the line holding the
+ * caret (.escr-current-line, see DiploPanel) gets a background instead of a
+ * focus ring.
+ */
+/* the text sits 12px off every edge of the panel */
+html:has(#main.escr-vue-enabled) #escr-editor #diplomatic-lines {
+    padding: 12px;
+}
+html:has(#main.escr-vue-enabled) #escr-editor #diplomatic-lines:not(.ttb) > div {
+    position: relative;
+    min-height: calc(1lh + 2px); /* empty lines keep a line's height */
+    margin: 0;
+    padding: 1px 8px 1px 52px;
+}
+/* sort mode draws its separators and selection with borders */
+html:has(#main.escr-vue-enabled) #escr-editor #diplomatic-lines:not(.ttb):not(.sortmode) > div {
+    border: none;
+    border-radius: 6px;
+}
+html:has(#main.escr-vue-enabled) #escr-editor #diplomatic-lines:not(.ttb) > div::before {
+    position: absolute;
+    top: 1px;
+    left: 0;
+    width: 36px;
+    height: auto;
+    margin: 0;
+    border: none;
+    font-family: "Noto Sans", sans-serif;
+    font-size: 12.5px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    color: var(--stage-text-muted);
+    user-select: none;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .rtl #diplomatic-lines:not(.ttb) > div {
+    padding: 1px 52px 1px 8px;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .rtl #diplomatic-lines:not(.ttb) > div::before {
+    right: 0;
+    left: auto;
+    text-align: left;
+}
+html:has(#main.escr-vue-enabled) #escr-editor #diplomatic-lines,
+html:has(#main.escr-vue-enabled) #escr-editor #diplomatic-lines > div {
+    outline: none;
+}
+html:has(#main.escr-vue-enabled) #escr-editor #diplomatic-lines > div.escr-current-line {
+    background-color: var(--stage-text-selected);
+}
+html:has(#main.escr-vue-enabled) #escr-editor #diplomatic-lines > div.escr-current-line::before {
+    color: var(--primary);
+}
+
+/*
+ * Zoom minimap (wheelzoom): the "current view" box moves past the map when the
+ * stage is panned beyond the image, so the map clips it to its own frame.
+ */
+html:has(#main.escr-vue-enabled) #escr-editor .wheelzoom-outter-map {
+    overflow: hidden;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    z-index: 2;
+}
+html:has(#main.escr-vue-enabled) #escr-editor .wheelzoom-inner-map {
+    font-size: 0; /* its zoom text moves with it: the fixed label shows it */
+}
+html:has(#main.escr-vue-enabled) #escr-editor .wheelzoom-map-label {
+    display: block !important; /* hidden inline for the legacy UI */
+    position: absolute;
+    left: 4px;
+    bottom: 4px;
+    padding: 1px 5px;
+    border-radius: 5px;
+    background-color: rgb(255 255 255 / 85%);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: #18181b;
+}
+
+/* toolbar icons at 16px, the size of every other page's button icons (the
+   buttons stay 32px, so the targets don't shrink); the navigation's own icons
+   and the small chevrons keep their sizes */
+html:has(#main.escr-vue-enabled) #escr-editor :is(.escr-toolbar, .escr-editor-nav) :is(button, a, label) svg:not(.escr-global-nav *, [class*="chevron"], .escr-logo) {
+    width: 16px;
+    height: 16px;
+}

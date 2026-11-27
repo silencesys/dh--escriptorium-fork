@@ -33,7 +33,7 @@
 <script>
 import EscrButton from "../Button/Button.vue";
 import EscrModal from "../Modal/Modal.vue";
-import WarningIcon from "../Icons/WarningIcon/WarningIcon.vue";
+import { WarningIcon } from "../Icons/Lucide/icons";
 import "./ConfirmModal.css";
 
 export default {

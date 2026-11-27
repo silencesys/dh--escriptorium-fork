@@ -1,0 +1,46 @@
+/* segmented light / dark / system control */
+.escr-theme-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    height: 32px;
+    padding: 2px;
+    box-sizing: border-box;
+    border-radius: 16px;
+    background-color: var(--nav-hover, var(--background2));
+}
+.escr-theme-option {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text3);
+    cursor: pointer;
+    transition: color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+.escr-theme-option svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.escr-theme-option:hover {
+    color: var(--text1);
+}
+.escr-theme-option--selected {
+    color: var(--text1);
+    background-color: var(--background1);
+    box-shadow: 0 0 0 1px var(--divider, var(--background2-dark));
+}
+.escr-theme-option:focus-visible {
+    outline: 2px solid var(--primary-focus);
+    outline-offset: 1px;
+}

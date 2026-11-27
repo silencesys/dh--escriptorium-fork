@@ -9,7 +9,11 @@
             :disabled="isWorking || !partsLoaded"
             :toggle-tool="toggleTool"
             :tool="activeTool"
-        />
+        >
+            <template #start>
+                <slot name="toolbar-start" />
+            </template>
+        </EditorGlobalToolbar>
         <div
             v-if="legacyModeEnabled"
             class="row"
@@ -196,6 +200,8 @@ export default {
             }),
             fullsizeimage: false,
             isWorking: false,
+            // tool to go back to when Space is released (null: not panning with Space)
+            toolBeforeSpacePan: null,
         };
     },
     computed: {
@@ -235,6 +241,16 @@ export default {
                         this.setActiveTool("pan");
                     }
                     break;
+                case " ":
+                    // hold Space to pan, whatever tool is selected (new ui)
+                    if (!this.legacyModeEnabled && this.spacePans(event)) {
+                        event.preventDefault();
+                        if (!event.repeat && this.activeTool !== "pan") {
+                            this.toolBeforeSpacePan = this.activeTool;
+                            this.setActiveTool("pan");
+                        }
+                    }
+                    break;
                 case "0":
                     // reset zoom (new ui)
                     if (!this.legacyModeEnabled && ctrlKey) {
@@ -272,6 +288,14 @@ export default {
                     break;
             }
         }.bind(this));
+        // releasing Space (or leaving the window while holding it) ends panning
+        document.addEventListener("keyup", (event) => {
+            if (event.key === " " && this.toolBeforeSpacePan !== null) {
+                event.preventDefault();
+                this.endSpacePan();
+            }
+        });
+        window.addEventListener("blur", () => this.endSpacePan());
 
         // load the full size image when we reach a scale > some threshold in the largest zoomTarget
         this.zoom.events.addEventListener("wheelzoom.updated", function(ev) {
@@ -294,6 +318,25 @@ export default {
         ...mapMutations("document", ["setSegmentationOpened"]),
         ...mapActions("parts", ["loadPart", "rotate"]),
         ...mapActions("globalTools", ["toggleTool", "setActiveTool"]),
+        /**
+         * Space pans unless it is meant for the focused element: typing in a
+         * field, or pressing a control reached with the keyboard.
+         */
+        spacePans(event) {
+            const el = event.target;
+            if (!(el instanceof Element) || el === document.body) return true;
+            const typing = "input, textarea, select, [contenteditable]:not([contenteditable='false'])";
+            if (el.closest(typing)) return false;
+            return !el.matches(":focus-visible");
+        },
+        endSpacePan() {
+            if (this.toolBeforeSpacePan === null) return;
+            // keep a tool picked while panning (e.g. with S or P)
+            if (this.activeTool === "pan") {
+                this.setActiveTool(this.toolBeforeSpacePan);
+            }
+            this.toolBeforeSpacePan = null;
+        },
         prefetchImage(src, callback) {
             // It is the panel's responsibility to call this!
             let img = new Image();

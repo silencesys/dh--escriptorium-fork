@@ -1,6 +1,6 @@
 <script>
 import Button from "../Button/Button.vue";
-import CheckIcon from "../Icons/CheckIcon/CheckIcon.vue";
+import { CheckIcon } from "../Icons/Lucide/icons";
 import Tags from "../Tags/Tags.vue";
 import TextField from "../TextField/TextField.vue";
 import SegmentedButtonGroup from "../SegmentedButtonGroup/SegmentedButtonGroup.vue";
@@ -130,10 +130,38 @@ export default {
             this.selectedTags = [];
         },
         /**
-         * Toggle "untagged" with the checkmark input
+         * Toggle "untagged" with its chip; an untagged item can't have all the
+         * tags too, so picking it switches "match all" to "match any"
          */
         toggleUntagged(e) {
             this.untagged = e.target.checked;
+            if (this.untagged && this.selectedOperator === "and") {
+                this.selectedOperator = "or";
+            }
+        },
+        /**
+         * Helper method to render "Untagged" as one more (empty) tag
+         */
+        renderUntaggedOption(h) {
+            return [
+                h("input", {
+                    class: { "sr-only": true },
+                    domProps: {
+                        id: "filter-tag-untagged",
+                        type: "checkbox",
+                        checked: this.untagged,
+                    },
+                    on: { change: this.toggleUntagged },
+                }),
+                h(
+                    "label",
+                    {
+                        class: "escr-tag escr-tag--untagged",
+                        domProps: { htmlFor: "filter-tag-untagged" },
+                    },
+                    [h("span", "Untagged"), h(CheckIcon)],
+                ),
+            ];
         },
         /**
          * Use the text input to filter the tags by string
@@ -215,7 +243,7 @@ export default {
                         {
                             props: {
                                 color: "primary",
-                                label: "Apply Filter",
+                                label: "Apply",
                                 disabled: !this.dirty,
                                 onClick: () => this.onApply({
                                     operator: this.selectedOperator,
@@ -271,7 +299,7 @@ export default {
             "div",
             { class: "escr-tag-filter escr-modal" },
             [
-                h("h3", "Filter Tags"),
+                h("h3", "Filter by tags"),
                 h(
                     SegmentedButtonGroup,
                     {
@@ -280,11 +308,11 @@ export default {
                             name: "tag-filter-operator",
                             options: [{
                                 value: "and",
-                                label: "AND",
+                                label: "Match all",
                                 selected: this.selectedOperator === "and",
                             }, {
                                 value: "or",
-                                label: "OR",
+                                label: "Match any",
                                 selected: this.selectedOperator === "or",
                             }],
                             onChangeSelection: this.setOperator,
@@ -298,7 +326,7 @@ export default {
                         h("div", [
                             h(Button, {
                                 props: {
-                                    label: "Select All",
+                                    label: "Select all",
                                     color: "link-primary",
                                     size: "small",
                                     onClick: this.selectAllTags,
@@ -307,7 +335,7 @@ export default {
                             }),
                             h(Button, {
                                 props: {
-                                    label: "Select None",
+                                    label: "Clear",
                                     color: "link-primary",
                                     size: "small",
                                     onClick: this.selectNoTags,
@@ -332,38 +360,14 @@ export default {
                 h(
                     "div",
                     { class: "escr-tag-filter-group" },
-                    this.getFilteredTags().map(
-                        (tag) => this.renderTagOption(h, tag)
-                    ),
+                    [
+                        ...this.getFilteredTags().map(
+                            (tag) => this.renderTagOption(h, tag)
+                        ),
+                        this.renderUntaggedOption(h),
+                    ],
                 ),
                 this.renderFilteredTagNotice(h),
-                h("hr"),
-                h(
-                    "label",
-                    {
-                        domProps: {
-                            htmlFor: "untagged",
-                        }
-                    },
-                    [
-                        h(
-                            "input",
-                            {
-                                domProps: {
-                                    type: "checkbox",
-                                    id: "untagged",
-                                    onchange: this.toggleUntagged,
-                                    checked: this.untagged && this.selectedOperator !== "and",
-                                    disabled: this.selectedOperator === "and",
-                                },
-                            },
-                        ),
-                        h(
-                            "span",
-                            "Untagged"
-                        )
-                    ]
-                ),
                 this.renderFilterActions(h),
             ],
         );

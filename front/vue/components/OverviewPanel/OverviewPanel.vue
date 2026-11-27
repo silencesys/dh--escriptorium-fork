@@ -89,16 +89,19 @@ import { BasePanel } from "../../../src/editor/mixins.js";
 import EditorToolbar from "../EditorToolbar/EditorToolbar.vue";
 import EscrLoader from "../Loader/Loader.vue";
 import EscrTable from "../Table/Table.vue";
-import LinesIcon from "../Icons/LinesIcon/LinesIcon.vue";
-import PencilIcon from "../Icons/PencilIcon/PencilIcon.vue";
-import RegionsIcon from "../Icons/RegionsIcon/RegionsIcon.vue";
-import SearchIcon from "../Icons/SearchIcon/SearchIcon.vue";
 import SegmentedButtonGroup from "../SegmentedButtonGroup/SegmentedButtonGroup.vue";
-import TagIcon from "../Icons/TagIcon/TagIcon.vue";
 import TextField from "../TextField/TextField.vue";
-import TranscribeIcon from "../Icons/TranscribeIcon/TranscribeIcon.vue";
 import LockToggle from "./LockToggle.vue";
 import TypeSwatch from "./TypeSwatch.vue";
+import { Hash, LayoutTemplate, Pencil, Search, Spline, Type } from "lucide";
+import lucideIcon from "../Icons/Lucide/lucideIcon";
+
+const LinesIcon = lucideIcon(Spline);
+const PencilIcon = lucideIcon(Pencil);
+const RegionsIcon = lucideIcon(LayoutTemplate);
+const SearchIcon = lucideIcon(Search);
+const TagIcon = lucideIcon(Hash);
+const TranscribeIcon = lucideIcon(Type);
 
 export default {
     name: "OverviewPanel",
@@ -267,12 +270,17 @@ export default {
     position: relative;
     display: flex;
     align-items: center;
-    flex: 1 0 auto;
+    /* shrinks with the panel; the bar scrolls once it can't shrink further */
+    flex: 1 1 160px;
+    min-width: 140px;
 }
 
 .escr-elements-filter svg {
     position: absolute;
+    z-index: 1;
     left: 0.6rem;
+    width: 15px;
+    height: 15px;
     fill: var(--text2);
     pointer-events: none;
 }
@@ -283,8 +291,12 @@ export default {
 }
 
 .escr-elements-filter ::v-deep input {
+    min-width: 0;
+    width: 100%;
+    height: 32px;
     margin: 0;
-    padding-left: 2.25rem;
+    padding: 0 8px 0 2rem;
+    font-size: 13px;
 }
 
 .content-container {

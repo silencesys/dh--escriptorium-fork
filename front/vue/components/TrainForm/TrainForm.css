@@ -1,66 +1,129 @@
-.escr-model-training-form {
+/* the model step of the training panel: type, name, base model, then the
+   start button, which stays at the bottom of the panel */
+.escr-train-form {
     display: flex;
-    flex-direction: row;
-    align-items: flex-end;
-    flex-wrap: nowrap;
-    gap: 1.5rem;
-    width: 100%;
-    margin-bottom: 0;
-    position: relative;
+    flex: 1 1 auto;
+    flex-flow: column;
+    gap: 16px;
 }
-.escr-model-training-form > * {
-    margin-bottom: 0 !important;
-}
-.escr-model-training-form .escr-model-type {
-    flex: 0 0 auto;
-}
-.escr-model-training-form .escr-model-name,
-.escr-model-training-form .escr-base-model {
-    flex: 1 1 200px;
-    min-width: 150px;
-}
-.escr-model-training-form .escr-model-name {
-    position: relative;
-}
-.escr-model-training-form .escr-model-name .escr-field-errors {
-    position: absolute;
-    top: 0;
-    right: 0;
+.escr-train-form .escr-form-field,
+.escr-train-form .escr-text-field {
     margin: 0;
 }
-.escr-model-name.escr-text-field input {
-    padding: 6px 8px;
-}
-.escr-model-training-form .escr-overwrite {
-    flex: 0 0 auto;
+
+/* type: a track with two halves */
+.escr-train-form .escr-segmented-button-group {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    height: 38px;
-    white-space: nowrap;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 8px;
+    background-color: var(--nav-hover);
 }
-.escr-model-training-form .escr-train-btn {
-    flex: 0 0 auto;
-    height: 38px;
+.escr-train-form .escr-segmented-button-group > div {
+    flex: 1 1 0;
+    height: 28px;
+    max-height: 28px;
 }
-.escr-model-training-form .escr-base-model .escr-autocomplete-dropdown {
+.escr-train-form .escr-segmented-button-group > div > label {
+    width: 100%;
+    min-height: 28px;
+    height: 28px;
+    margin: 0;
+    padding: 0 10px;
+    border-radius: 6px;
+    font-size: 13px;
+}
+.escr-train-form .escr-segmented-button-group input:not(:checked) + label {
+    background-color: transparent;
+    color: var(--text2);
+    font-weight: 500;
+}
+.escr-train-form .escr-segmented-button-group input:not(:checked) + label:hover {
+    color: var(--text1);
+}
+.escr-train-form .escr-segmented-button-group input:checked + label {
+    background-color: var(--background1);
+    color: var(--text1);
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 12%);
+}
+.escr-train-form .escr-segmented-button-group input:focus-visible + label {
+    box-shadow: 0 0 0 2px var(--primary-focus);
+}
+
+/* name: the error sits under the field, not over the label */
+.escr-train-form .escr-model-name {
+    display: flex;
+    flex-flow: column;
+}
+.escr-train-form .escr-model-name .escr-field-errors {
+    order: 10;
+    margin: 4px 0 0;
+    padding: 0;
+    list-style: none;
+}
+.escr-train-form .escr-model-name .escr-field-errors .escr-help-text {
+    font-size: 12px;
+}
+
+/* base model, its hint and the overwrite switch */
+.escr-train-form .escr-base-model .escr-autocomplete-dropdown {
     margin-bottom: 0 !important;
 }
-.escr-model-training-form .escr-base-model .escr-autocomplete-options {
-    top: auto;
-    bottom: calc(100% + 4px);
-    box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.1);
-}
-.escr-model-training-form .escr-segmented-button-group {
-    margin-top: 8px;
-}
-.escr-model-training-form input[type="checkbox"]:disabled + span {
+.escr-train-form .escr-train-hint {
+    margin: 6px 0 0;
     color: var(--text3);
+    font-size: 12px;
+    line-height: 16px;
 }
-.escr-model-training-form .escr-global-errors {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    text-align: center;
-    font-size: 0.85rem;
+.escr-train-form .escr-overwrite {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0 0;
+    color: var(--text1);
+    font-size: 13px;
+    font-weight: 400;
+    cursor: pointer;
+}
+.escr-train-form .escr-overwrite input {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    accent-color: var(--primary);
+}
+.escr-train-form .escr-overwrite--disabled {
+    color: var(--text3);
+    cursor: default;
+}
+
+/* footer: pinned to the bottom of the panel */
+.escr-train-form .escr-train-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 3;
+    display: flex;
+    flex-flow: column;
+    gap: 8px;
+    margin: auto -20px 0;
+    padding: 14px 20px 20px;
+    border-top: 1px solid var(--divider);
+    background-color: var(--background1);
+}
+.escr-train-form .escr-train-message {
+    margin: 0;
+    color: var(--text2);
+    font-size: 12.5px;
+    line-height: 18px;
+}
+.escr-train-form .escr-train-message:empty {
+    display: none;
+}
+/* the next step to take: plain, not an error */
+.escr-train-form .escr-train-message--error {
+    color: var(--text1);
+    font-weight: 500;
+}
+.escr-train-form .escr-train-btn {
+    width: 100%;
 }

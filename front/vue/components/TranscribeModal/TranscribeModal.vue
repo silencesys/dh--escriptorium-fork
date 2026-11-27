@@ -60,7 +60,7 @@ import DropdownField from "../Dropdown/DropdownField.vue";
 import EscrAlert from "../Alert/Alert.vue";
 import EscrButton from "../Button/Button.vue";
 import EscrModal from "../Modal/Modal.vue";
-import XIcon from "../Icons/XIcon/XIcon.vue";
+import { XIcon } from "../Icons/Lucide/icons";
 import "../Common/Form.css";
 
 export default {

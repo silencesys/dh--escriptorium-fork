@@ -84,7 +84,7 @@
 </template>
 
 <script>
-import ChevronDownIcon from "../Icons/ChevronDownIcon/ChevronDownIcon.vue";
+import { ChevronDownIcon } from "../Icons/Lucide/icons";
 import "./AutocompleteDropdown.css";
 
 export default {

@@ -30,6 +30,8 @@ const state = () => ({
     editModalOpen: false,
     id: null,
     lastModified: "",
+    /** when the document was created */
+    createdAt: "",
     linePosition: null,
     loading: {
         document: true,
@@ -335,6 +337,7 @@ const actions = {
         const { data } = await retrieveDocument(state.id);
         if (data) {
             commit("setLastModified", data.updated_at);
+            commit("setCreatedAt", data.created_at || "");
             commit("setMainScript", data.main_script);
             commit("setReadDirection", data.read_direction);
             commit("setLinePosition", data.line_offset);
@@ -1183,6 +1186,9 @@ const mutations = {
     },
     setId(state, id) {
         state.id = id;
+    },
+    setCreatedAt(state, createdAt) {
+        state.createdAt = createdAt;
     },
     setLastModified(state, lastModified) {
         state.lastModified = lastModified;

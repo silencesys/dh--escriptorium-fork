@@ -12,12 +12,18 @@
                 <ExtraNav />
             </div>
         </nav>
-        <EditorNavigation
-            v-else
-            :disabled="!partsLoaded"
-        />
 
-        <TabContent :legacy-mode-enabled="legacyModeEnabled" />
+        <TabContent :legacy-mode-enabled="legacyModeEnabled">
+            <!-- title, paging and element tools, on one row with the view tools -->
+            <template
+                v-if="!legacyModeEnabled"
+                #toolbar-start
+            >
+                <EditorNavigation
+                    :disabled="!partsLoaded"
+                />
+            </template>
+        </TabContent>
 
         <!-- modals -->
         <ElementDetailsModal

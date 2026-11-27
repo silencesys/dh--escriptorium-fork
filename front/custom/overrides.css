@@ -1,0 +1,125 @@
+/*
+ * Custom rules on top of the stock Vue UI.
+ *
+ * Convention: start every selector with the scope below, so the rule only
+ * applies to the Vue UI and legacy mode stays untouched:
+ *
+ *     html:has(#main.escr-vue-enabled) <selector> { ... }
+ *
+ * Use the tokens from theme.css (var(--primary), var(--text2), ...) instead of
+ * raw colours, so light and dark mode both keep working.
+ */
+
+html:has(#main.escr-vue-enabled) ::selection {
+    background-color: var(--primary-focus);
+}
+
+/* cards: hairline instead of a bare white block, slightly tighter radius */
+html:has(#main.escr-vue-enabled) .escr-card {
+    border: 1px solid var(--divider);
+    border-radius: 12px;
+}
+
+/* focus rings only for keyboard focus (:focus-visible), never after a click */
+html:has(#main.escr-vue-enabled) :focus:not(:focus-visible) {
+    outline: none;
+}
+html:has(#main.escr-vue-enabled) :is(.escr-button, .escr-toggle-button):focus:not(:focus-visible),
+html:has(#main.escr-vue-enabled) .escr-toggle-button:focus-within:not(:has(:focus-visible)) {
+    box-shadow: none;
+}
+html:has(#main.escr-vue-enabled) .escr-image-card label.image-checkbox:focus-within:not(:has(:focus-visible)) svg,
+html:has(#main.escr-vue-enabled) .escr-image-card label.image-checkbox:focus-within:not(:has(:focus-visible)) svg + span::before {
+    box-shadow: none;
+}
+html:has(#main.escr-vue-enabled) .escr-vertical-menu :is(a, button):focus:not(:focus-visible):not(:hover) {
+    background-color: transparent;
+}
+
+/* breadcrumbs: small and quiet; links are muted text (no underline) that
+   darken on hover, the current page reads in the primary text colour */
+html:has(#main.escr-vue-enabled) .escr-breadcrumbs {
+    gap: 6px;
+    font-size: 13px;
+}
+/* upstream reserves 81px for the first crumb, which leaves a hole after it */
+html:has(#main.escr-vue-enabled) .escr-breadcrumbs li.escr-first-crumb {
+    min-width: 0;
+}
+html:has(#main.escr-vue-enabled) .escr-breadcrumbs li:not(.escr-first-crumb)::before {
+    margin-right: 6px;
+    font-weight: 400;
+    color: var(--text3);
+}
+html:has(#main.escr-vue-enabled) .escr-breadcrumbs li a {
+    font-weight: 400;
+    text-decoration: none;
+    color: var(--text2);
+}
+html:has(#main.escr-vue-enabled) .escr-breadcrumbs li a:hover {
+    text-decoration: none;
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) .escr-breadcrumbs li span {
+    font-weight: 500;
+    color: var(--text1);
+}
+
+/* text inputs never sit darker than the page: the raised surface, a hairline
+   border, and the accent ring on focus */
+html:has(#main.escr-vue-enabled) .escr-text-field :is(input, textarea):not(:disabled) {
+    background-color: var(--background1);
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+}
+html:has(#main.escr-vue-enabled) .escr-text-field :is(input, textarea):not(:disabled):hover {
+    border-color: var(--background2-darker);
+}
+html:has(#main.escr-vue-enabled) .escr-text-field :is(input, textarea):focus-visible {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-focus);
+}
+html:has(#main.escr-vue-enabled) .escr-text-field :is(input, textarea)::placeholder {
+    color: var(--text3);
+}
+
+/* Sidebar to content: the nav items already sit 12px inside the nav, so the
+   page only adds 12px more (upstream 32px left a 44px gap). The breadcrumbs
+   in the top bar follow the same line. */
+html:has(#main.escr-vue-enabled) {
+    --page-gutter-start: 12px;
+    /* the right edge lines up with the avatar in the top bar */
+    --page-gutter-end: 20px;
+}
+html:has(#main.escr-vue-enabled) :is(.escr-page:not(#editor), main:not(:has(.escr-page))) {
+    padding-left: var(--page-gutter-start);
+    padding-right: var(--page-gutter-end);
+}
+html:has(#main.escr-vue-enabled) .escr-global-nav .escr-topbar {
+    padding-left: var(--page-gutter-start);
+}
+
+/* Page titles: every page's title starts the same 8px under the top bar (the
+   editor's toolbar row places its own),
+   and Django pages' titles get the UI font and size instead of Bootstrap's
+   system font and heading margin. */
+html:has(#main.escr-vue-enabled) {
+    --page-gutter-top: 8px;
+}
+html:has(#main.escr-vue-enabled) :is(.escr-page:not(#editor), main:not(:has(.escr-page))) {
+    padding-top: var(--page-gutter-top);
+}
+html:has(#main.escr-vue-enabled) main:not(:has(.escr-page)) h1 {
+    margin-top: 0;
+    font-family: "Noto Sans", "Resized Arabic", sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 33px;
+}
+
+/* signed-in users are sent from the home page to their projects (see
+   vue/exports/globalNavigation.js): don't paint the home page on the way */
+html:has(#main.escr-vue-enabled):has(#vue-global-nav > global-navigation[\:is-authenticated="true"]) body.homepage {
+    visibility: hidden;
+}

@@ -7,13 +7,15 @@ main:has(#escr-editor) {
 #escr-editor {
     display: flex;
     flex-flow: column;
+    /* height of everything above the panels: top bar and the editor toolbar */
+    --editor-top: calc(var(--topbar-height, 0px) + 54px);
 }
 
 /* generic panel styling */
 div.escr-editor-tabcontent,
 div.escr-editor-tabcontent .marginless.row {
-    min-height: calc(100vh - 126px);
-    max-height: calc(100vh - 126px);
+    min-height: calc(100vh - var(--editor-top));
+    max-height: calc(100vh - var(--editor-top));
 }
 div.escr-editor-tabcontent .marginless.row {
     margin: 0;
@@ -41,15 +43,15 @@ div.escr-editor-tabcontent .col.panel .content-container {
 }
 div.escr-editor-tabcontent .col.panel .content-container,
 div.escr-editor-tabcontent .col.panel .js-wheelzoom-container {
-    min-height: calc(100vh - 180px);
-    max-height: calc(100vh - 180px);
+    min-height: calc(100vh - var(--editor-top) - 54px);
+    max-height: calc(100vh - var(--editor-top) - 54px);
 }
 
 /* DiploPanel height override */
 div.escr-editor-tabcontent #diplo-panel .content-container {
     overflow-y: auto;
     overflow-x: hidden;
-    max-height: calc(100vh - 180px);
+    max-height: calc(100vh - var(--editor-top) - 54px);
 }
 div.escr-editor-tabcontent #diplo-panel #save-notif {
     color: var(--primary);

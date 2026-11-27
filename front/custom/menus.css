@@ -1,0 +1,74 @@
+/*
+ * Menus: one compact surface for every floating-vue menu (vertical-menu,
+ * modal-menu, tags-dropdown) so context menus look the same across the app.
+ */
+html:has(#main.escr-vue-enabled) :is(
+    .v-popper--theme-vertical-menu,
+    .v-popper--theme-modal-menu,
+    .v-popper--theme-tags-dropdown
+) .v-popper__inner {
+    padding: 4px !important;
+    background: var(--background1) !important;
+    border: 1px solid var(--divider) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 6%), 0 8px 24px rgb(0 0 0 / 12%) !important;
+}
+html:has(#main.escr-vue-enabled) .v-popper--theme-tags-dropdown .v-popper__inner {
+    padding: 8px !important;
+}
+html:has(#main.escr-vue-enabled) .v-popper--theme-tags-dropdown :is(.v-popper__arrow-inner, .v-popper__arrow-outer) {
+    display: none;
+}
+
+/* menu list and items */
+html:has(#main.escr-vue-enabled) .escr-vertical-menu {
+    gap: 1px;
+    min-width: 180px;
+}
+html:has(#main.escr-vue-enabled) .escr-vertical-menu :is(button, a) {
+    gap: 10px;
+    height: 32px;
+    padding: 0 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--text1);
+    fill: var(--text1);
+    white-space: nowrap;
+    transition: none;
+}
+html:has(#main.escr-vue-enabled) .escr-vertical-menu :is(svg, .escr-menuitem-icon) {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    max-height: 16px;
+    margin: 0;
+    color: var(--text2);
+}
+html:has(#main.escr-vue-enabled) .escr-vertical-menu :is(button, a):is(:hover, :focus, :active, .preselected) {
+    background-color: var(--nav-hover);
+    outline: none;
+}
+html:has(#main.escr-vue-enabled) .escr-vertical-menu :is(button, a):focus-visible {
+    box-shadow: inset 0 0 0 2px var(--primary-focus);
+}
+html:has(#main.escr-vue-enabled) .escr-vertical-menu button:disabled {
+    background: transparent;
+    color: var(--text3);
+}
+html:has(#main.escr-vue-enabled) .escr-vertical-menu button:disabled svg {
+    color: var(--text3);
+}
+
+/* separators and help text */
+html:has(#main.escr-vue-enabled) .escr-vertical-menu .new-section {
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid var(--divider);
+}
+html:has(#main.escr-vue-enabled) .escr-vertical-menu + .escr-help-text {
+    margin-top: 4px;
+    padding: 8px 10px 4px;
+    border-top: 1px solid var(--divider);
+    font-size: 12.5px;
+    color: var(--text2);
+}

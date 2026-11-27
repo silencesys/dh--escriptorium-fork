@@ -162,14 +162,17 @@ Visual transcription panel (or visualisation panel)
 import { Dropdown as VDropdown } from "floating-vue";
 import { mapActions, mapState } from "vuex";
 import { BasePanel } from "../../src/editor/mixins.js";
-import ConfidenceIcon from "./Icons/ConfidenceIcon/ConfidenceIcon.vue";
-import ChevronDownIcon from "./Icons/ChevronDownIcon/ChevronDownIcon.vue";
 import EscrButton from "./Button/Button.vue";
 import EditorToolbar from "./EditorToolbar/EditorToolbar.vue";
 import TranscriptionDropdown from "./EditorTranscriptionDropdown/EditorTranscriptionDropdown.vue";
 import VisuLine from "./VisuLine.vue";
 import ToggleButton from "./ToggleButton/ToggleButton.vue";
 import TranscriptionModal from "./TranscriptionModal.vue";
+import { ChevronDown, Gauge } from "lucide";
+import lucideIcon from "./Icons/Lucide/lucideIcon";
+
+const ConfidenceIcon = lucideIcon(Gauge);
+const ChevronDownIcon = lucideIcon(ChevronDown);
 
 export default {
     name: "VisuPanel",
@@ -212,7 +215,7 @@ export default {
         // wait for the element to be rendered
         Vue.nextTick(function() {
             this.$parent.zoom.register(this.$el.querySelector("#visu-zoom-container"),
-                {map: true});
+                {map: true, panOnEmpty: true});
             this.refresh();
         }.bind(this));
 

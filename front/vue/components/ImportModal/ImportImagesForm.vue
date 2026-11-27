@@ -28,7 +28,7 @@
 
 <script>
 import { mapActions, mapState } from "vuex";
-import UploadIcon from "../Icons/UploadIcon/UploadIcon.vue";
+import { UploadIcon } from "../Icons/Lucide/icons";
 import ImageDropzone from "vue2-dropzone";
 import { thumbnail } from "../../../src/util/dropzone";
 import "vue2-dropzone/dist/vue2Dropzone.min.css";

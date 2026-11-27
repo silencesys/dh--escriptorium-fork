@@ -1,15 +1,15 @@
 <template>
-    <div class="escr-model-training-form escr-card escr-card-padding">
+    <div class="escr-train-form">
         <div
             class="escr-form-field escr-model-type"
             role="group"
-            aria-label="Model Type"
+            aria-label="Model type"
         >
             <span
                 class="escr-field-label"
                 aria-hidden="true"
             >
-                Model Type
+                Type
             </span>
             <EscrSegmentedButtonGroup
                 name="model-type-toggle"
@@ -20,7 +20,7 @@
         </div>
         <EscrTextField
             class="escr-model-name"
-            label="Model Name"
+            label="Name"
             placeholder="Name your new model..."
             :disabled="form.override || isSubmitting"
             :value="form.model_name"
@@ -33,71 +33,70 @@
             "
             required
         />
-        <EscrAutocompleteField
-            class="escr-base-model"
-            label="Base Model (optional)"
-            help-text="Select a model to fine-tune, or leave blank to train from scratch."
+        <div class="escr-base-model-group">
+            <EscrAutocompleteField
+                :key="modelType"
+                class="escr-base-model"
+                label="Base model"
+                placeholder="None, train from scratch"
+                :disabled="isSubmitting"
+                :option-groups="modelOptionGroups"
+                :on-change="onChangeBaseModel"
+            />
+            <p class="escr-train-hint">
+                Pick a model to fine-tune, or leave empty to train a new one.
+            </p>
+            <label
+                class="escr-overwrite"
+                :class="{ 'escr-overwrite--disabled': !form.model || isSubmitting }"
+            >
+                <input
+                    type="checkbox"
+                    :disabled="!form.model || isSubmitting"
+                    :checked="form.override"
+                    aria-describedby="overwrite-help"
+                    @change="onChangeOverride"
+                >
+                <span>Overwrite the base model</span>
+            </label>
+            <span
+                id="overwrite-help"
+                class="sr-only"
+            >
+                You must be the owner of the base model to overwrite its file.
+            </span>
+        </div>
+        <!-- epochs, learning rate, ...: only on servers with our training API -->
+        <EscrTrainingSettings
+            v-model="options"
+            :model-type="modelType"
+            :has-base-model="!!form.model"
             :disabled="isSubmitting"
-            :option-groups="modelOptionGroups"
-            :on-change="onChangeBaseModel"
+            :errors="optionErrors"
         />
-        <label
-            class="escr-form-field escr-overwrite"
-            title="You must be the owner of the model to overwrite its file."
-        >
-            <input
-                type="checkbox"
-                :disabled="!form.model || isSubmitting"
-                :checked="form.override"
-                aria-describedby="overwrite-help"
-                @change="onChangeOverride"
+        <!-- what will happen, or what is still missing, then the button -->
+        <div class="escr-train-footer">
+            <p
+                class="escr-train-message"
+                :class="{ 'escr-train-message--error': blocker }"
+                role="alert"
+                aria-live="polite"
             >
-            <span>Overwrite existing</span>
-        </label>
-        <span
-            id="overwrite-help"
-            class="sr-only"
-        >
-            You must be the owner of the base model to overwrite its file.
-        </span>
-        <EscrButton
-            class="escr-train-btn"
-            color="primary"
-            label="Start Training"
-            :disabled="
-                !isValid ||
-                    isSubmitting ||
-                    !currentCollection.id ||
-                    !currentCollection.items ||
-                    currentCollection.items.length === 0
-            "
-            :on-click="submitTraining"
-        />
-        <div
-            class="escr-global-errors escr-help-text error"
-            role="alert"
-            aria-live="polite"
-        >
-            <span
-                v-if="
-                    !currentCollection.id &&
-                        currentCollection.items &&
-                        currentCollection.items.length > 0
+                {{ blocker || summary }}
+            </p>
+            <EscrButton
+                class="escr-train-btn"
+                color="primary"
+                :label="isSubmitting ? 'Starting…' : 'Start training'"
+                :disabled="
+                    !isValid ||
+                        isSubmitting ||
+                        !currentCollection.id ||
+                        !currentCollection.items ||
+                        currentCollection.items.length === 0
                 "
-            >
-                You must save this selection as a collection before you can
-                train a model.
-            </span>
-            <span
-                v-else-if="
-                    dirty &&
-                        (!currentCollection.items ||
-                            currentCollection.items.length === 0)
-                "
-            >
-                You must select a collection of document parts in order to train
-                a model.
-            </span>
+                :on-click="submitTraining"
+            />
         </div>
     </div>
 </template>
@@ -109,6 +108,8 @@ import EscrButton from "../../components/Button/Button.vue";
 // eslint-disable-next-line max-len
 import EscrSegmentedButtonGroup from "../../components/SegmentedButtonGroup/SegmentedButtonGroup.vue";
 import EscrTextField from "../../components/TextField/TextField.vue";
+import EscrTrainingSettings from "../TrainingSettings/TrainingSettings.vue";
+import { trainCollectionWithOptions } from "../../../src/api/customTraining";
 import "./TrainForm.css";
 
 export default {
@@ -117,12 +118,16 @@ export default {
         EscrButton,
         EscrSegmentedButtonGroup,
         EscrTextField,
+        EscrTrainingSettings,
     },
     data() {
         return {
             dirty: false,
             isSubmitting: false,
             modelType: "recognizer",
+            // training settings; empty trains with kraken's defaults
+            options: {},
+            optionErrors: {},
             form: {
                 model_name: "",
                 model: null,
@@ -181,6 +186,33 @@ export default {
             }
             return groups;
         },
+        /**
+         * What still stands in the way of training, if anything
+         */
+        blocker() {
+            const items = this.currentCollection.items || [];
+            if (items.length === 0) {
+                return this.dirty
+                    ? "Select images to train on first."
+                    : "";
+            }
+            if (!this.currentCollection.id) {
+                return "Save the selection as a collection to train on it.";
+            }
+            return "";
+        },
+        /**
+         * What the training will run on
+         */
+        summary() {
+            const n = (this.currentCollection.items || []).length;
+            if (!n) return "Select the images to train on.";
+            const images = `${n} ${n === 1 ? "image" : "images"}`;
+            const name = this.currentCollection.name || "the collection";
+            return this.isCollectionDirty
+                ? `Trains on the saved version of ${name}.`
+                : `Trains on ${images} from ${name}.`;
+        },
         modelTypeOptions() {
             return [
                 {
@@ -230,17 +262,35 @@ export default {
                     payload.override = this.form.override;
                 }
 
-                await this.$store.dispatch("collection/trainModel", {
-                    modelType: this.modelType,
-                    payload,
-                });
+                this.optionErrors = {};
+                if (Object.keys(this.options).length) {
+                    // our endpoint: upstream's training, with the settings
+                    await trainCollectionWithOptions(
+                        this.currentCollection.id,
+                        this.modelType,
+                        { ...payload, options: this.options },
+                    );
+                } else {
+                    await this.$store.dispatch("collection/trainModel", {
+                        modelType: this.modelType,
+                        payload,
+                    });
+                }
 
                 this.$store.dispatch("alerts/add", {
                     color: "success",
                     message: "Training job successfully queued!",
                 });
             } catch (error) {
-                this.$store.dispatch("alerts/addError", error);
+                const optionErrors = error?.response?.data?.options;
+                if (optionErrors) {
+                    // shown with the settings
+                    this.optionErrors = typeof optionErrors === "object"
+                        ? optionErrors
+                        : { non_field_errors: [String(optionErrors)] };
+                } else {
+                    this.$store.dispatch("alerts/addError", error);
+                }
             } finally {
                 this.isSubmitting = false;
             }

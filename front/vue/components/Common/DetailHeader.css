@@ -1,0 +1,137 @@
+/*
+ * Header of a detail page (a project, a document): the title with the page's
+ * actions on the right and its tags under it, then a band of labelled details
+ * in groups, set off by hairlines; labels as the tables' headers.
+ */
+.escr-detail-header {
+    display: flex;
+    flex-flow: column;
+    gap: 12px;
+    min-width: 0;
+}
+.escr-detail-title {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+.escr-detail-title h1 {
+    min-width: 0;
+    margin: 0;
+    overflow-wrap: anywhere;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+}
+.escr-detail-actions {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 8px;
+    /* centred on the title's first line */
+    min-height: 33px;
+}
+.escr-detail-tags.escr-tag-group {
+    gap: 6px;
+}
+.escr-details {
+    display: flex;
+    flex-flow: row wrap;
+    gap: 16px 48px;
+    margin: 4px 0 0;
+    padding: 16px 0;
+    border-top: 1px solid var(--divider);
+    border-bottom: 1px solid var(--divider);
+    /* clips the divider of a group that starts a row (see below) */
+    overflow: hidden;
+}
+.escr-detail-group {
+    position: relative;
+    display: flex;
+    gap: 16px 32px;
+}
+/* a divider in the gap before each group: when the groups wrap, the divider
+   of the group that starts the new row falls outside the band, clipped */
+.escr-detail-group::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -24px;
+    border-left: 1px solid var(--divider);
+}
+.escr-details dt {
+    margin-bottom: 4px;
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 16px;
+}
+.escr-details dd {
+    margin: 0;
+    color: var(--text1);
+    font-size: 13.5px;
+    line-height: 20px;
+    white-space: nowrap;
+}
+.escr-details .escr-detail-empty {
+    color: var(--text3);
+}
+.escr-detail-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--text1);
+    font: inherit;
+    text-decoration: underline;
+    text-decoration-color: var(--divider);
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+.escr-detail-link:hover {
+    color: var(--primary);
+    text-decoration-color: currentColor;
+}
+.escr-detail-link:focus-visible {
+    border-radius: 4px;
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+.escr-detail-link svg {
+    width: 13px;
+    height: 13px;
+    color: var(--text3);
+}
+
+/* a section of the page (a list): heading with a count, actions on the right */
+.escr-detail-section {
+    display: flex;
+    flex-flow: column;
+    min-width: 0;
+}
+.escr-detail-section > .escr-card-header {
+    gap: 16px;
+    margin: 0 0 16px;
+}
+.escr-detail-section > .escr-card-header h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+.escr-count {
+    min-width: 22px;
+    height: 22px;
+    padding: 0 7px;
+    border-radius: 11px;
+    background-color: var(--nav-hover);
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 22px;
+    text-align: center;
+}

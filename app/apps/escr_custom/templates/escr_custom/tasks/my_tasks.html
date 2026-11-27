@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% load i18n l10n timedelta escr_ui %}
+{% comment %}
+My Tasks in the new UI (escr_custom.tasks.views.MyTasks; the legacy UI keeps
+reporting/taskreport_list.html). Styles: front/custom/tasks.css.
+{% endcomment %}
+{% block head_title %}{% trans "My Tasks" %}{% endblock %}
+
+{% block body %}
+<div class="escr-tasks">
+    <h1>{% trans "My Tasks" %}</h1>
+
+    <div class="escr-bento">
+        {# ---- disk ---- #}
+        <section class="escr-tile escr-tile--disk" aria-labelledby="escr-tile-disk">
+            <h2 class="escr-tile-title" id="escr-tile-disk">
+                <span class="escr-tile-icon">{% icon "hard-drive" %}</span>
+                {% trans "Disk usage" %}
+            </h2>
+            <p class="escr-tile-value">
+                {{ disk.total|filesizeformat }}
+                {% if disk.enforced %}<span class="escr-tile-of">{% blocktrans with limit=disk.limit|filesizeformat %}of {{ limit }}{% endblocktrans %}</span>{% endif %}
+            </p>
+            <p class="escr-tile-hint">{% trans "Your images and models" %}</p>
+            <div class="escr-segbar{% if disk.enforced %} escr-segbar--quota{% endif %}" data-level="{{ disk.level }}"
+                 {% if disk.enforced %}role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ disk.used_percentage|unlocalize }}"
+                 aria-label="{% blocktrans with used=disk.used_percentage %}Disk usage: {{ used }}% of your limit{% endblocktrans %}"{% else %}aria-hidden="true"{% endif %}>
+                {% for part in disk.parts %}{% if part.size %}<span class="escr-segbar-part escr-segbar-part--{{ part.key }}" style="flex-basis: {{ part.share|unlocalize }}%"></span>{% endif %}{% endfor %}
+            </div>
+            <ul class="escr-tile-legend">
+                {% for part in disk.parts %}
+                <li>
+                    <span class="escr-swatch escr-swatch--{{ part.key }}" aria-hidden="true"></span>
+                    <span class="escr-tile-legend-label">{{ part.label }}</span>
+                    <span class="escr-tile-legend-value">{{ part.size|filesizeformat }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% if disk.enforced and not user.has_free_disk_storage %}
+            <p class="escr-tile-status" data-level="critical" role="alert">{% icon "circle-x" 14 %}{% trans "You don't have any disk storage left" %}</p>
+            {% elif disk.level == "warning" %}
+            <p class="escr-tile-status" data-level="warning">{% icon "info" 14 %}{% blocktrans with used=disk.used_percentage %}{{ used }}% of your storage used{% endblocktrans %}</p>
+            {% endif %}
+        </section>
+
+        {# ---- CPU and GPU time ---- #}
+        {% for meter in usage_meters %}
+        <section class="escr-tile escr-tile--usage" aria-labelledby="escr-tile-{{ meter.kind }}">
+            <h2 class="escr-tile-title" id="escr-tile-{{ meter.kind }}">
+                <span class="escr-tile-icon">{% icon meter.icon %}</span>
+                {{ meter.label }}
+            </h2>
+            <p class="escr-tile-value">
+                {{ meter.value|minutes }}<span class="escr-tile-unit">{% trans "min" %}</span>
+                {% if meter.enforced %}<span class="escr-tile-of">{% blocktrans with limit=meter.limit %}of {{ limit }}{% endblocktrans %}</span>{% endif %}
+            </p>
+            <p class="escr-tile-hint">{% blocktrans with since=quota_since|date:"M j" %}Since {{ since }}{% endblocktrans %}</p>
+            {% if meter.enforced %}
+            <div class="escr-meter" data-level="{{ meter.level }}" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ meter.used_percentage|unlocalize }}"
+                 aria-label="{% blocktrans with label=meter.label used=meter.used_percentage %}{{ label }}: {{ used }}% of your weekly limit{% endblocktrans %}">
+                <span class="escr-meter-fill" style="width: {{ meter.used_percentage|unlocalize }}%"></span>
+            </div>
+            {% endif %}
+            {% if meter.any %}
+            <div class="escr-spark" role="img"
+                 aria-label="{% blocktrans with label=meter.label %}{{ label }} per day over the last {{ days }} days{% endblocktrans %}">
+                {% for bar in meter.bars %}<span class="escr-spark-bar{% if bar.in_quota_window %} is-current{% endif %}{% if not bar.value %} is-zero{% endif %}" style="--h: {{ bar.height|unlocalize }}%" title="{{ bar.date|date:'M j' }}: {{ bar.value|minutes }} {% trans 'min' %}"></span>{% endfor %}
+            </div>
+            <div class="escr-spark-axis" aria-hidden="true">
+                <span>{{ meter.bars.0.date|date:"M j" }}</span><span>{% trans "Today" %}</span>
+            </div>
+            {% else %}
+            <p class="escr-tile-empty">{% blocktrans %}Nothing in the last {{ days }} days{% endblocktrans %}</p>
+            {% endif %}
+            {% if meter.enforced and meter.level == "critical" %}
+            <p class="escr-tile-status" data-level="critical" role="alert">{% icon "circle-x" 14 %}{% trans "No minutes left this week" %}</p>
+            {% elif meter.level == "warning" %}
+            <p class="escr-tile-status" data-level="warning">{% icon "info" 14 %}{% blocktrans with used=meter.used_percentage %}{{ used }}% of this week's minutes used{% endblocktrans %}</p>
+            {% endif %}
+        </section>
+        {% endfor %}
+
+        {# ---- tasks per day ---- #}
+        <section class="escr-tile escr-tile--activity" aria-labelledby="escr-tile-activity">
+            <div class="escr-tile-head">
+                <h2 class="escr-tile-title" id="escr-tile-activity">
+                    <span class="escr-tile-icon">{% icon "clock" %}</span>
+                    {% trans "Tasks per day" %}
+                </h2>
+                <p class="escr-tile-aside">{% blocktrans count total=chart_total %}{{ total }} task in the last {{ days }} days{% plural %}{{ total }} tasks in the last {{ days }} days{% endblocktrans %}</p>
+            </div>
+            <div class="escr-chart{% if not chart_total %} is-empty{% endif %}">
+                <ol class="escr-chart-ticks" aria-hidden="true">
+                    {% for tick in chart_ticks %}<li>{{ tick }}</li>{% endfor %}
+                </ol>
+                <ol class="escr-chart-cols" data-escr-chart aria-label="{% blocktrans %}Tasks per day over the last {{ days }} days{% endblocktrans %}">
+                    {% for day in chart %}
+                    <li class="escr-chart-col{% if day.is_today %} is-today{% endif %}" style="--h: {{ day.height|unlocalize }}%"
+                        tabindex="{% if day.is_today %}0{% else %}-1{% endif %}"
+                        aria-label="{{ day.date|date:'D, M j' }}: {% blocktrans count total=day.total %}{{ total }} task{% plural %}{{ total }} tasks{% endblocktrans %}">
+                        <span class="escr-chart-slot">
+                            {% if day.total %}<span class="escr-chart-bar"></span>{% endif %}
+                            <span class="escr-chart-tip" aria-hidden="true">
+                                <strong>{% blocktrans count total=day.total %}{{ total }} task{% plural %}{{ total }} tasks{% endblocktrans %}</strong>
+                                <span class="escr-chart-tip-date">{{ day.date|date:"D, M j" }}</span>
+                                {% for part in day.breakdown %}
+                                <span class="escr-chart-tip-row"><span class="escr-key escr-key--{{ part.key }}"></span>{{ part.count }} {{ part.label|lower }}</span>
+                                {% endfor %}
+                            </span>
+                        </span>
+                        <span class="escr-chart-label" aria-hidden="true">{% if day.is_today %}{% trans "Today" %}{% elif forloop.first or day.date.day == 1 %}{{ day.date|date:"M j" }}{% else %}{{ day.date|date:"j" }}{% endif %}</span>
+                    </li>
+                    {% endfor %}
+                </ol>
+                {% if not chart_total %}<p class="escr-chart-empty">{% blocktrans %}No tasks in the last {{ days }} days{% endblocktrans %}</p>{% endif %}
+            </div>
+        </section>
+
+        {# ---- how they ended ---- #}
+        <section class="escr-tile escr-tile--outcomes" aria-labelledby="escr-tile-outcomes">
+            <h2 class="escr-tile-title" id="escr-tile-outcomes">
+                <span class="escr-tile-icon">{% icon "circle-check" %}</span>
+                {% trans "How they ended" %}
+            </h2>
+            <p class="escr-tile-hint">{% blocktrans %}Last {{ days }} days{% endblocktrans %}</p>
+            {% if chart_total %}
+            <div class="escr-outcome-bar" role="img"
+                 aria-label="{% for outcome in outcomes %}{% if outcome.count %}{{ outcome.label }}: {{ outcome.count }} ({{ outcome.share }}%){% if not forloop.last %}, {% endif %}{% endif %}{% endfor %}">
+                {% for outcome in outcomes %}{% if outcome.count %}<span class="escr-outcome-part escr-outcome-part--{{ outcome.key }}" style="flex-grow: {{ outcome.count|unlocalize }}" title="{{ outcome.label }}: {{ outcome.count }} ({{ outcome.share }}%)">{% if outcome.share >= 14 %}{{ outcome.share|floatformat:0 }}%{% endif %}</span>{% endif %}{% endfor %}
+            </div>
+            {% else %}
+            <div class="escr-outcome-bar is-empty" aria-hidden="true"></div>
+            {% endif %}
+            <ul class="escr-tile-legend escr-outcome-legend">
+                {% for outcome in outcomes %}
+                <li class="escr-outcome escr-outcome--{{ outcome.key }}{% if not outcome.count %} is-zero{% endif %}">
+                    {% icon outcome.icon 14 "escr-outcome-icon" %}
+                    <span class="escr-tile-legend-label">{{ outcome.label }}</span>
+                    <span class="escr-tile-legend-value">{{ outcome.count }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </section>
+    </div>
+
+    <p class="escr-tasks-note">
+        {% icon "info" 14 %}
+        {% trans "CPU and GPU time also include the processing of images on upload, which isn't listed below." %}
+    </p>
+
+    {# ---- the tasks ---- #}
+    <section class="escr-tasks-list" aria-labelledby="escr-tasks-list-title">
+        <h2 id="escr-tasks-list-title">{% trans "Tasks" %}</h2>
+        <table class="table escr-tasks-table">
+            <thead>
+                <tr>
+                    <th>{% trans "Task" %}</th>
+                    <th>{% trans "State" %}</th>
+                    <th>{% trans "Started" %}</th>
+                    <th>{% trans "Duration" %}</th>
+                    <th class="escr-num">{% trans "CPU" %}</th>
+                    <th class="escr-num">{% trans "GPU" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in object_list %}
+                <tr>
+                    <td class="escr-tasks-label"><a href="{% url 'report-detail' report.pk %}">{{ report.label }}</a></td>
+                    <td><span class="escr-state escr-state--{{ report.state.key }}">{% icon report.state.icon 14 %}{{ report.state.label }}</span></td>
+                    <td>{% if report.started_at %}<time datetime="{{ report.started_at|date:'c' }}" title="{{ report.started_at }}">{{ report.started_at|date:"M j, H:i" }}</time>{% else %}<span class="escr-muted">—</span>{% endif %}</td>
+                    <td>{% if report.duration %}{{ report.duration|format_timedelta }}{% else %}<span class="escr-muted">—</span>{% endif %}</td>
+                    <td class="escr-num">{{ report.cpu_cost|minutes }} <span class="escr-muted">{% trans "min" %}</span></td>
+                    <td class="escr-num">{{ report.gpu_cost|minutes }} <span class="escr-muted">{% trans "min" %}</span></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="escr-tasks-empty">{% trans "You don't have any task report yet." %}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% include 'includes/pagination.html' %}
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,322 @@
+/*
+ * Controls outside the editor (which sizes its own toolbars): one compact
+ * scale for Vue buttons, search inputs and filter buttons, and for the
+ * buttons and form fields of Django pages, so filter bars and actions line up
+ * everywhere: 32px tall (28px small), 13px text, 8px corners.
+ */
+
+/* ---- buttons (EscrButton) ---- */
+html:has(#main.escr-vue-enabled) .escr-button:not(#escr-editor *) {
+    gap: 6px;
+    min-height: 32px;
+    padding: 0 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+}
+html:has(#main.escr-vue-enabled) .escr-button:not(#escr-editor *) :is(svg + span, span + svg) {
+    margin-left: 0;
+}
+html:has(#main.escr-vue-enabled) .escr-button:not(#escr-editor *) svg {
+    flex: none;
+    max-width: 16px;
+    max-height: 16px;
+}
+html:has(#main.escr-vue-enabled) .escr-button--small:not(#escr-editor *) {
+    min-height: 28px;
+    padding: 0 10px;
+    font-size: 12.5px;
+}
+html:has(#main.escr-vue-enabled) .escr-button--large:not(#escr-editor *) {
+    min-height: 32px;
+}
+html:has(#main.escr-vue-enabled) .escr-button--icon-only:not(#escr-editor *) {
+    min-width: 32px;
+    padding: 0;
+}
+html:has(#main.escr-vue-enabled) .escr-button--icon-only.escr-button--small:not(#escr-editor *) {
+    min-width: 28px;
+}
+html:has(#main.escr-vue-enabled) .escr-button--round:not(#escr-editor *) {
+    border-radius: 50%;
+}
+
+/* ---- search input ---- */
+html:has(#main.escr-vue-enabled) .escr-search-input:not(#escr-editor *) {
+    position: relative;
+}
+/* a search glyph inside the field, in the placeholder's colour */
+html:has(#main.escr-vue-enabled) .escr-search-input:not(#escr-editor *)::before {
+    content: "";
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    width: 14px;
+    height: 14px;
+    transform: translateY(-50%);
+    background-color: var(--text3);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E") center / contain no-repeat;
+    pointer-events: none;
+}
+html:has(#main.escr-vue-enabled) .escr-search-input:not(#escr-editor *) .escr-search-input-field {
+    box-sizing: border-box;
+    width: 220px;
+    height: 32px;
+    padding: 0 28px 0 30px;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background-color: var(--background1);
+    color: var(--text1);
+    font-size: 13px;
+    line-height: 30px;
+}
+html:has(#main.escr-vue-enabled) .escr-search-input:not(#escr-editor *) .escr-search-input-field:hover {
+    border-color: var(--background2-darker);
+}
+html:has(#main.escr-vue-enabled) .escr-search-input:not(#escr-editor *) .escr-search-input-field:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-focus);
+}
+html:has(#main.escr-vue-enabled) .escr-search-input:not(#escr-editor *) .escr-search-input-field::placeholder {
+    color: var(--text3);
+}
+html:has(#main.escr-vue-enabled) .escr-search-input:not(#escr-editor *) .escr-search-input-clear {
+    right: 6px;
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    font-size: 16px;
+}
+html:has(#main.escr-vue-enabled) .escr-search-input:not(#escr-editor *) .escr-search-input-clear:hover {
+    background-color: var(--nav-hover);
+}
+
+/* ---- filter set: search, filter buttons; the "Filter by:" label is for screen readers ---- */
+html:has(#main.escr-vue-enabled) .escr-filter-set {
+    gap: 8px;
+}
+html:has(#main.escr-vue-enabled) .escr-filter-set > span:first-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+/* filter buttons: quiet outlined chips, tinted once a filter is applied */
+html:has(#main.escr-vue-enabled) .escr-filter-button .escr-button {
+    margin-right: 0;
+    border: 1px solid var(--divider);
+    background-color: var(--background1);
+    color: var(--text2);
+    fill: var(--text2);
+    font-size: 13px;
+}
+html:has(#main.escr-vue-enabled) .escr-filter-button .escr-button svg {
+    fill: currentColor;
+}
+html:has(#main.escr-vue-enabled) .escr-filter-button .escr-button:hover {
+    border-color: var(--background2-darker);
+    background-color: var(--background1);
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) .escr-filter-button--active .escr-button {
+    border-color: var(--primary);
+    background-color: var(--selected-background);
+    color: var(--primary);
+}
+html:has(#main.escr-vue-enabled) .escr-filter-button .escr-button .count {
+    width: auto;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    font-size: 11px;
+    line-height: 18px;
+    text-align: center;
+}
+html:has(#main.escr-vue-enabled) .escr-filter-button .escr-button:disabled {
+    border-color: var(--divider);
+    background-color: transparent;
+    color: var(--text3);
+}
+
+/* ---- Django pages: buttons and form fields on the same scale ---- */
+html:has(#main.escr-vue-enabled) main:not(:has(.escr-page)) .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 0 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    vertical-align: middle;
+}
+html:has(#main.escr-vue-enabled) main:not(:has(.escr-page)) .btn.btn-sm {
+    min-height: 28px;
+    min-width: 28px;
+    padding: 0 8px;
+    font-size: 12.5px;
+}
+/* the display above must not unhide buttons the page hides */
+html:has(#main.escr-vue-enabled) main:not(:has(.escr-page)) .btn:is(.hide, .d-none, [hidden]) {
+    display: none;
+}
+/* row actions stay on one line */
+html:has(#main.escr-vue-enabled) main:not(:has(.escr-page)) table.table td:has(.btn) {
+    white-space: nowrap;
+}
+html:has(#main.escr-vue-enabled) main:not(:has(.escr-page)) table.table td .inline-form {
+    display: inline-block;
+}
+/* neutral buttons: a raised surface with a hairline, like the filter chips */
+html:has(#main.escr-vue-enabled) main:not(:has(.escr-page)) .btn:is(.btn-secondary, .btn-light) {
+    border: 1px solid var(--divider);
+    background-color: var(--background1);
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) main:not(:has(.escr-page)) .btn:is(.btn-secondary, .btn-light):hover {
+    border-color: var(--background2-darker);
+    background-color: var(--background1);
+    color: var(--text1);
+}
+/* form fields */
+html:has(#main.escr-vue-enabled) main:not(:has(.escr-page)) :is(
+    input.form-control,
+    select.form-control,
+    select.custom-select,
+    form input[type="text"],
+    form input[type="search"],
+    form select
+) {
+    box-sizing: border-box;
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background-color: var(--background1);
+    color: var(--text1);
+    font-size: 13px;
+}
+html:has(#main.escr-vue-enabled) main:not(:has(.escr-page)) :is(select.form-control, select.custom-select, form select) {
+    padding-right: 28px;
+}
+html:has(#main.escr-vue-enabled) main:not(:has(.escr-page)) :is(input.form-control, select.form-control, select.custom-select, form input[type="text"], form select):focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-focus);
+    outline: none;
+}
+html:has(#main.escr-vue-enabled) main:not(:has(.escr-page)) :is(form, .form-group) label {
+    margin-bottom: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+}
+
+/* neutral outlined buttons (Share/Edit, modal Cancel): a hairline like the
+   filter chips instead of a full-strength outline */
+html:has(#main.escr-vue-enabled) .escr-button--outline-text:not(#escr-editor *) {
+    border-color: var(--divider);
+    background-color: var(--background1);
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) .escr-button--outline-text:not(#escr-editor *):hover {
+    border-color: var(--background2-darker);
+    background-color: var(--background1);
+}
+
+/* the image card's hover actions: small square buttons in their pill (the
+   round-button rule above would win otherwise) */
+html:has(#main.escr-vue-enabled) .escr-image-card .escr-image-actions .escr-button:not(#escr-editor *) {
+    min-width: 26px;
+    min-height: 26px;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background-color: transparent;
+    color: var(--text1);
+    fill: var(--text1);
+}
+html:has(#main.escr-vue-enabled) .escr-image-card .escr-image-actions .escr-button:not(#escr-editor *):hover,
+html:has(#main.escr-vue-enabled) .escr-image-card .escr-image-actions.context-menu-open .context-menu-button:not(#escr-editor *) {
+    background-color: var(--nav-hover);
+}
+
+/* checkboxes of Task Monitoring and of modals: a hairline box, filled
+   with the accent when ticked (or partly, in a table header) */
+html:has(#main.escr-vue-enabled) :is(.escr-monitoring-check, .escr-modal-backdrop > .escr-modal, .escr-tag-filter) input[type="checkbox"] {
+    box-sizing: border-box;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    vertical-align: middle;
+    appearance: none;
+    border: 1px solid var(--background2-darker);
+    border-radius: 4px;
+    background: var(--background1) no-repeat center / 12px;
+    cursor: pointer;
+}
+html:has(#main.escr-vue-enabled) :is(.escr-monitoring-check, .escr-modal-backdrop > .escr-modal, .escr-tag-filter) input[type="checkbox"]:hover:not(:disabled) {
+    border-color: var(--text3);
+}
+html:has(#main.escr-vue-enabled) :is(.escr-monitoring-check, .escr-modal-backdrop > .escr-modal, .escr-tag-filter) input[type="checkbox"]:is(:checked, :indeterminate) {
+    border-color: var(--primary);
+    background-color: var(--primary);
+}
+html:has(#main.escr-vue-enabled) :is(.escr-monitoring-check, .escr-modal-backdrop > .escr-modal, .escr-tag-filter) input[type="checkbox"]:checked {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+}
+html:has(#main.escr-vue-enabled) :is(.escr-monitoring-check, .escr-modal-backdrop > .escr-modal, .escr-tag-filter) input[type="checkbox"]:indeterminate {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 12h12'/%3E%3C/svg%3E");
+}
+html:has(#main.escr-vue-enabled) :is(.escr-monitoring-check, .escr-modal-backdrop > .escr-modal, .escr-tag-filter) input[type="checkbox"]:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--primary-focus);
+}
+html:has(#main.escr-vue-enabled) :is(.escr-monitoring-check, .escr-modal-backdrop > .escr-modal, .escr-tag-filter) input[type="checkbox"]:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+/*
+ * The shared controls draw Lucide icons (vue/components/Icons/Lucide/icons.js):
+ * the select chevron at 18px (drawn 9px wide), centred on its control and
+ * ending 12px in; notes' icons at 16px in their text colour. Modals size the
+ * rest (custom/modals.css).
+ */
+html:has(#main.escr-vue-enabled) :is(.escr-dropdown, .escr-autocomplete-dropdown) svg.escr-icon.escr-chevron-down-icon,
+html:has(#main.escr-vue-enabled) .escr-multiselect-trigger svg.escr-icon {
+    position: absolute;
+    top: 50%;
+    right: 7px;
+    width: 18px;
+    height: 18px;
+    transform: translateY(-50%);
+    color: var(--text2);
+    pointer-events: none;
+}
+html:has(#main.escr-vue-enabled) .escr-multiselect-trigger--open svg.escr-icon {
+    transform: translateY(-50%) rotate(180deg);
+}
+html:has(#main.escr-vue-enabled) .escr-alert svg.escr-icon {
+    width: 16px;
+    height: 16px;
+    color: inherit;
+}
+html:has(#main.escr-vue-enabled) .escr-help-icon svg.escr-icon {
+    width: 14px;
+    height: 14px;
+    color: var(--text3);
+}
+/* room for that chevron in every select of the shared dropdown */
+html:has(#main.escr-vue-enabled) .escr-dropdown:has(> svg.escr-chevron-down-icon) > select {
+    padding-right: 30px;
+}

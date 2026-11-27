@@ -1,42 +1,43 @@
 <template>
-    <div class="escr-card escr-card-padding escr-collection-actions">
-        <!-- collection select dropdown -->
-        <div class="escr-collection-dropdown">
+    <div class="escr-collection-form">
+        <!-- load a saved collection, or start over -->
+        <div class="escr-collection-load">
             <EscrDropdownField
-                label="Load Collection:"
+                label="Collection"
                 :label-visible="true"
                 :options="collectionsOptions"
                 :on-change="handleLoadCollection"
             />
             <EscrButton
                 :disabled="!collectionId"
-                label="Start New"
-                color="outline-primary"
+                label="New"
+                color="outline-text"
                 :on-click="handleNewCollection"
-                size="small"
-            />
+            >
+                <template #button-icon>
+                    <PlusIcon />
+                </template>
+            </EscrButton>
         </div>
-        <!-- name -->
-        <div class="escr-collection-name">
-            <h3
-                v-if="!isEditingName"
-                @click="startEditingName"
-            >
-                <span>
-                    {{ collectionName || "Untitled Collection" }}
-                    {{ isDirty ? "*" : "" }}
-                </span>
-                <PencilIcon />
-            </h3>
-            <div
-                v-else
-                class="escr-collection-name-editor"
-            >
+        <!-- the current selection: its name, size and whether it is saved -->
+        <div class="escr-collection-current">
+            <div class="escr-collection-name">
+                <button
+                    v-if="!isEditingName"
+                    type="button"
+                    class="escr-collection-name-button"
+                    title="Rename the collection"
+                    @click="startEditingName"
+                >
+                    <span>{{ collectionName || "Untitled collection" }}</span>
+                    <PencilIcon />
+                </button>
                 <EscrTextField
+                    v-else
                     ref="nameInput"
                     class="escr-collection-name-input"
                     name="virtual-collection-name"
-                    label="Collection Name"
+                    label="Collection name"
                     :label-visible="false"
                     placeholder="Name your collection..."
                     :value="collectionName"
@@ -45,33 +46,29 @@
                     :on-keydown="handleNameKeydown"
                     :max-length="512"
                 />
-                <EscrButton
-                    color="outline-primary"
-                    :on-click="() => { isEditingName = false; }"
-                    @mousedown.native.prevent="isEditingName = false"
-                >
-                    <template #button-icon>
-                        <CheckIcon />
-                    </template>
-                </EscrButton>
             </div>
-        </div>
-        <!-- images count and save -->
-        <div class="escr-save-collection">
-            <span class="collection-stats">
-                <strong>{{ collectionItems.length }}</strong> parts staged
-            </span>
-            <EscrButton
-                label="Save Collection"
-                color="primary"
-                :disabled="
-                    isLoadingCollection ||
-                        isSavingCollection ||
-                        collectionItems.length === 0 ||
-                        !isDirty
-                "
-                :on-click="handleSaveCollection"
-            />
+            <div class="escr-collection-status">
+                <span class="escr-collection-stats">
+                    {{ imagesLabel }}<template v-if="statusLabel">
+                        <span aria-hidden="true">·</span>
+                        <span :class="{ 'escr-collection-unsaved': isDirty }">
+                            {{ statusLabel }}
+                        </span>
+                    </template>
+                </span>
+                <EscrButton
+                    label="Save"
+                    size="small"
+                    :color="isDirty && collectionItems.length ? 'primary' : 'outline-text'"
+                    :disabled="
+                        isLoadingCollection ||
+                            isSavingCollection ||
+                            collectionItems.length === 0 ||
+                            !isDirty
+                    "
+                    :on-click="handleSaveCollection"
+                />
+            </div>
         </div>
     </div>
 </template>
@@ -81,18 +78,21 @@ import { mapActions, mapState } from "vuex";
 import EscrButton from "../../components/Button/Button.vue";
 import EscrDropdownField from "../../components/Dropdown/DropdownField.vue";
 import EscrTextField from "../../components/TextField/TextField.vue";
-import PencilIcon from "../../components/Icons/PencilIcon/PencilIcon.vue";
-import CheckIcon from "../../components/Icons/CheckIcon/CheckIcon.vue";
+import { Pencil, Plus } from "lucide";
+import lucideIcon from "../Icons/Lucide/lucideIcon";
 import "./ManageCollectionForm.css";
+
+const PencilIcon = lucideIcon(Pencil);
+const PlusIcon = lucideIcon(Plus);
 
 export default {
     name: "ManageCollectionForm",
     components: {
-        CheckIcon,
         EscrButton,
         EscrDropdownField,
         EscrTextField,
         PencilIcon,
+        PlusIcon,
     },
     data() {
         return {
@@ -118,6 +118,21 @@ export default {
                 label: c.name,
                 selected: c.id === this.collectionId,
             }));
+        },
+        /**
+         * How many images the selection holds
+         */
+        imagesLabel() {
+            const n = this.collectionItems.length;
+            return `${n} ${n === 1 ? "image" : "images"}`;
+        },
+        /**
+         * Whether the selection is saved: training needs a saved collection
+         */
+        statusLabel() {
+            if (this.isDirty) return "Unsaved";
+            if (this.collectionId) return "Saved";
+            return "";
         },
     },
     methods: {
@@ -156,11 +171,11 @@ export default {
          * Persist the collection in the backend
          */
         async handleSaveCollection() {
-            // If the user hasn't set a name, default it to "Untitled Collection"
+            // If the user hasn't set a name, default it to "Untitled collection"
             if (!this.collectionName || this.collectionName.trim() === "") {
                 this.$store.commit(
                     "collection/setCollectionName",
-                    "Untitled Collection",
+                    "Untitled collection",
                 );
             }
             try {

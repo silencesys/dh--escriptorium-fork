@@ -19,6 +19,10 @@
 
  */
 var lastId = 0;
+// new UI grab margins, in screen pixels whatever the zoom: around any item
+// (baselines, borders, masks) and around its points (corners, baseline points)
+const HIT_TOLERANCE = 8;
+const HANDLE_TOLERANCE = 10;
 function generateUniqueId() {
     return lastId++;
 }
@@ -348,6 +352,8 @@ class SegmenterLine {
             visible:
                 (this.baseline && this.baseline.length == 0) ||
                 this.segmenter.showMasks,
+            // new UI: outside masks mode, masks are a read-only overlay
+            locked: !this.segmenter.masksEditable(),
             segments: this.mask,
         });
         // too resource intensive :(
@@ -522,7 +528,42 @@ class SegmenterLine {
         }
     }
 
+    /**
+     * New UI line number: a white badge with the number centred in it; its
+     * outline ring takes the colour of the line's region (neutral without one).
+     * Same children as the legacy display: [ring, disc, text].
+     */
+    createOrderBadge(anchor) {
+        const ratio = this.segmenter.getRatio();
+        this.segmenter.orderingLayer.activate();
+        const ring = new Shape.Circle(anchor, 11 / ratio);
+        const disc = new Shape.Circle(anchor, 9.5 / ratio);
+        disc.fillColor = "white";
+        const text = new PointText({
+            point: anchor,
+            content: parseInt(this.order) + 1,
+            fillColor: "#18181b",
+            fontFamily: "Noto Sans, sans-serif",
+            fontWeight: 600,
+            fontSize: 10 / ratio,
+            justification: "center",
+        });
+        this.orderDisplay = new Group({ children: [ring, disc, text] });
+        this.placeOrderBadge(anchor);
+    }
+
+    placeOrderBadge(anchor) {
+        const [ring, disc, text] = this.orderDisplay.children;
+        ring.position = anchor;
+        disc.position = anchor;
+        ring.fillColor = this.region ? this.region.color : "#71717a";
+        // text is drawn from its baseline: digits are ~0.7em tall, so a baseline
+        // 0.35em below the anchor centres them (bounds-centring sits too high)
+        text.point = new Point(anchor.x, anchor.y + text.fontSize * 0.35);
+    }
+
     createOrderDisplay(anchor) {
+        if (this.segmenter.newUiEnabled) return this.createOrderBadge(anchor);
         let offset = 10,
             circle,
             text,
@@ -570,6 +611,9 @@ class SegmenterLine {
         if (!this.orderDisplay) {
             // create it if it does not already exists
             this.createOrderDisplay(anchor);
+        } else if (this.segmenter.newUiEnabled) {
+            this.orderDisplay.children[2].content = parseInt(this.order) + 1;
+            this.placeOrderBadge(anchor);
         } else {
             // update
             let region = this.orderDisplay.children[0],
@@ -698,6 +742,8 @@ export class Segmenter {
             activeTool = "",
             // callback function (Vuex action) to set the active tool on state
             setActiveTool = () => {},
+            // new UI: pan the stage from a native mouse event (select tool on empty space)
+            startPan = () => {},
         } = {},
     ) {
         this.loaded = false;
@@ -721,6 +767,7 @@ export class Segmenter {
 
         /** New UI */
         this.newUiEnabled = newUiEnabled;
+        this.startPan = startPan;
         this.toolbar = toolbar;
         this.detachableToolbar = detachableToolbar;
         this.toolbarSubmenuIds = toolbarSubmenuIds;
@@ -756,7 +803,8 @@ export class Segmenter {
         // the minimal length in pixels below which the line will be removed automatically
         this.lengthThreshold = lengthThreshold;
         this.regionAreaThreshold = regionAreaThreshold;
-        this.showMasks = false;
+        // new UI: lines mode shows the masks too, as a read-only overlay
+        this.showMasks = newUiEnabled;
         this.showLineNumbers = false;
         this.showDirectionHint = true;
         this.wideLineStrokes = wideLineStrokes;
@@ -1266,6 +1314,25 @@ export class Segmenter {
         paper.install(window);
         paper.setup(this.canvas);
 
+        // paper finds the target of item mouse events with a zero tolerance, so a
+        // thin baseline or border can only be grabbed exactly on its stroke: the new
+        // UI gives every item a margin of a few screen pixels instead
+        const project = paper.project;
+        const projectHitTest = project.hitTest;
+        project.hitTest = (point, options) => {
+            if (
+                this.newUiEnabled &&
+                options &&
+                options.tolerance === 0 &&
+                options.fill &&
+                options.stroke &&
+                !options.segments
+            ) {
+                options = { ...options, tolerance: HIT_TOLERANCE / this.getRatio() };
+            }
+            return projectHitTest.call(project, point, options);
+        };
+
         // setup outbound events
         this.updateQueue = { lines: [], regions: [] };
         paper.view.onFrame = function (_ev) {
@@ -1452,6 +1519,24 @@ export class Segmenter {
                 this.selecting = region;
             }
 
+            // new UI: grabbing a border moves that whole edge along its normal (resize)
+            const edge = this.newUiEnabled ? this.regionEdgeAt(region, event.point) : null;
+            if (edge) {
+                this.tool.onMouseDrag = function (event) {
+                    this.selecting = region;
+                    if (event.event.shiftKey) return;
+                    const delta = event.delta.project(edge.normal);
+                    this.movePointInView(edge.curve.segment1.point, delta);
+                    this.movePointInView(edge.curve.segment2.point, delta);
+                }.bind(this);
+                this.tool.onMouseUp = function (event) {
+                    this.onMouseUp(event);
+                    this.resetToolEvents();
+                    this.updateRegionsFromCanvas();
+                }.bind(this);
+                return;
+            }
+
             var dragging = region.polygonPath.getNearestLocation(
                 event.point,
             ).segment;
@@ -1464,7 +1549,7 @@ export class Segmenter {
 
             var hit = region.polygonPath.hitTest(event.point, {
                 segments: true,
-                tolerance: 20,
+                tolerance: this.handleTolerance(20),
             });
             if (hit && hit.type == "segment") {
                 if (
@@ -1486,11 +1571,11 @@ export class Segmenter {
             }.bind(this);
         }.bind(this);
 
-        region.polygonPath.onMouseMove = function () {
+        region.polygonPath.onMouseMove = function (event) {
             if (this.mode != "regions") {
                 return;
             } else if (this.newUiEnabled) {
-                this.setCursor("pointer");
+                this.setCursor(region.locked ? "pointer" : this.regionCursorAt(region, event.point));
             }
         }.bind(this);
 
@@ -1511,6 +1596,48 @@ export class Segmenter {
         }.bind(this);
     }
 
+    /** Grab radius around a point: fixed on screen in the new UI, in image pixels before. */
+    handleTolerance(legacyTolerance) {
+        return this.newUiEnabled ? HANDLE_TOLERANCE / this.getRatio() : legacyTolerance;
+    }
+
+    /**
+     * The region border under `point`, if any (new UI): the edge (curve) and its
+     * unit normal. Corners are left to point dragging, so they don't count.
+     */
+    regionEdgeAt(region, point) {
+        const hit = region.polygonPath.hitTest(point, {
+            segments: true,
+            stroke: true,
+            tolerance: HIT_TOLERANCE / this.getRatio(),
+        });
+        if (!hit || hit.type !== "stroke" || !hit.location) return null;
+        const curve = hit.location.curve;
+        const vector = curve.segment2.point.subtract(curve.segment1.point);
+        if (vector.isZero()) return null;
+        return { curve, normal: vector.rotate(90).normalize() };
+    }
+
+    /** Cursor over a region (new UI): move on a corner, resize on a border. */
+    regionCursorAt(region, point) {
+        const edge = this.regionEdgeAt(region, point);
+        if (edge) return this.resizeCursor(edge.normal);
+        const corner = region.polygonPath.hitTest(point, {
+            segments: true,
+            tolerance: HIT_TOLERANCE / this.getRatio(),
+        });
+        return corner ? "move" : "pointer";
+    }
+
+    /** The resize cursor matching an edge normal (the direction the edge moves). */
+    resizeCursor(normal) {
+        const angle = ((normal.angle % 180) + 180) % 180;
+        if (angle < 22.5 || angle >= 157.5) return "ew-resize";
+        if (angle < 67.5) return "nwse-resize";
+        if (angle < 112.5) return "ns-resize";
+        return "nesw-resize";
+    }
+
     bindLineEvents(line) {
         if (line.baselinePath) {
             line.baselinePath.onMouseDown = function (event) {
@@ -1519,6 +1646,7 @@ export class Segmenter {
                     event.event.ctrlKey ||
                     this.splitting ||
                     isRightClick(event.event) ||
+                    (this.newUiEnabled && this.isDrawing) ||
                     this.mode != "lines" ||
                     this.selecting
                 )
@@ -1527,7 +1655,7 @@ export class Segmenter {
 
                 var hit = line.baselinePath.hitTest(event.point, {
                     segments: true,
-                    tolerance: 20,
+                    tolerance: this.handleTolerance(20),
                 });
 
                 if (hit && hit.type == "segment") {
@@ -1580,7 +1708,7 @@ export class Segmenter {
                 else this.setCursor("pointer");
                 var hit = line.baselinePath.hitTest(event.point, {
                     segments: true,
-                    tolerance: 5,
+                    tolerance: this.handleTolerance(5),
                 });
                 if (hit && hit.type == "segment") {
                     this.setCursor("pointer");
@@ -1607,6 +1735,7 @@ export class Segmenter {
                     event.event.ctrlKey ||
                     this.splitting ||
                     isRightClick(event.event) ||
+                    (this.newUiEnabled && this.isDrawing) ||
                     this.selecting ||
                     !["lines", "masks"].includes(this.mode)
                 )
@@ -1615,7 +1744,7 @@ export class Segmenter {
 
                 var hit = line.maskPath.hitTest(event.point, {
                     segments: true,
-                    tolerance: 20,
+                    tolerance: this.handleTolerance(20),
                 });
                 if (hit && hit.type == "segment") {
                     if (
@@ -1801,10 +1930,13 @@ export class Segmenter {
             } else if (!this.newUiEnabled || this.activeTool === "add-lines") {
                 // mode = 'lines'
                 // create a new line
-                this.startNewLine(event);
+                if (this.newUiEnabled) this.startNewPolyline(event);
+                else this.startNewLine(event);
             } else if (this.newUiEnabled) {
-                // normal mouse tool, click outside selection = deselect all
+                // normal mouse tool, click outside selection = deselect all,
+                // and dragging from there pans the stage
                 this.purgeSelection();
+                this.startPan(event.event);
             }
         }
     }
@@ -1892,6 +2024,87 @@ export class Segmenter {
             }.bind(this);
         }.bind(this);
         document.addEventListener("keyup", onCancel, { once: true });
+    }
+
+    /*
+     * New UI "add lines" tool: every click adds a point, a rubber band follows
+     * the cursor to the next one. Esc, or a click on the last point (a double
+     * click), finishes the line; Esc before a second point drops it.
+     * Dragging out from the first point still draws a freehand line.
+     */
+    startNewPolyline(event) {
+        this.purgeSelection();
+        this.isDrawing = true;
+
+        const clickLocation = [event.point.x, event.point.y];
+        // a line started in a region belongs to it
+        const region = this.getRegionsAt(clickLocation).pop() || null;
+        const newLine = this.createLine(null, [clickLocation], null, region, null, null, true);
+        let lastPoint = event.point.clone(); // last fixed point
+        let point = newLine.extend(event.point.clone()).point; // follows the cursor
+        let pressing = true; // the first click is still held
+        let freehand = false;
+        newLine.select(); // select it to make drawing more precise
+
+        // screen pixels in project units: the canvas is also scaled by the wheel zoom
+        const pixels = (px) => {
+            const canvas = paper.view.element;
+            const cssScale = canvas.getBoundingClientRect().width / canvas.clientWidth || 1;
+            return px / (paper.view.zoom * cssScale);
+        };
+        const follow = (to) => {
+            point.x = to.x;
+            point.y = to.y;
+            this.movePointInView(point, { x: 0, y: 0 });
+            newLine.showDirection();
+        };
+        const onKeyDown = (ev) => {
+            if (ev.key !== "Escape") return;
+            // the line is finished, not a selection to clear
+            ev.preventDefault();
+            ev.stopImmediatePropagation();
+            finish();
+        };
+        const finish = () => {
+            document.removeEventListener("keydown", onKeyDown, true);
+            // drop the point following the cursor; under two points, the line is dropped
+            if (!freehand) newLine.baselinePath.lastSegment.remove();
+            newLine.showDirection();
+            this.finishLine(newLine);
+        };
+
+        this.tool.onMouseDown = (ev) => {
+            // panning (space held) or moving items doesn't add points
+            if (this.activeTool === "pan" || ev.event.ctrlKey) return;
+            if (ev.point.getDistance(lastPoint) <= pixels(6)) {
+                finish();
+                return;
+            }
+            follow(ev.point);
+            lastPoint = point.clone();
+            point = newLine.extend(ev.point.clone()).point;
+        };
+        this.tool.onMouseMove = (ev) => {
+            if (this.activeTool !== "pan") follow(ev.point);
+        };
+        this.tool.onMouseUp = () => {
+            pressing = false;
+        };
+        this.tool.onMouseDrag = (ev) => {
+            if (this.activeTool === "pan" || !(pressing || freehand)) return;
+            if (!freehand) {
+                // a click that moves a little is still a click
+                if (ev.point.getDistance(lastPoint) < pixels(6)) return;
+                freehand = true;
+                this.tool.onMouseMove = null;
+                this.tool.onMouseUp = () => {
+                    newLine.baselinePath.simplify(10);
+                    finish();
+                };
+            }
+            point = newLine.extend(ev.point.clone()).point;
+        };
+        document.addEventListener("keydown", onKeyDown, true);
     }
 
     startNewRegion(event) {
@@ -2217,6 +2430,14 @@ export class Segmenter {
         }
     }
 
+    /**
+     * Whether line masks can be selected and edited: always in the legacy UI;
+     * in the new UI only in masks mode, other modes show them as an overlay.
+     */
+    masksEditable() {
+        return !this.newUiEnabled || this.mode === "masks";
+    }
+
     toggleMasks(force) {
         if (force !== undefined) this.showMasks = force;
         else this.showMasks = !this.showMasks;
@@ -2235,8 +2456,14 @@ export class Segmenter {
                 poly.visible = this.showMasks;
                 // paperjs shows handles for invisible items :(
                 if (!poly.visible && poly.selected) poly.selected = false;
-                if (poly.visible && this.lines[i].selected)
+                if (
+                    poly.visible &&
+                    this.lines[i].selected &&
+                    this.masksEditable()
+                )
                     poly.selected = true;
+                // locked items get no mouse events in paper.js
+                poly.locked = !this.masksEditable();
             }
         }
     }
@@ -3378,7 +3605,8 @@ export class Segmenter {
         this.mode = mode;
         switch (mode) {
             case "lines":
-                this.toggleMasks(false);
+                // the masks stay visible behind the baselines, read-only
+                this.toggleMasks(true);
                 this.toggleLineStrokes(true);
                 this.evenMasksGroup.bringToFront();
                 this.oddMasksGroup.bringToFront();

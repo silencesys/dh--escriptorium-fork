@@ -10,8 +10,9 @@
                         :triggers="['hover']"
                     >
                         <EscrButton
-                            label="Select All"
+                            label="Select all"
                             size="small"
+                            color="outline-text"
                             :disabled="allSelected || isUpdating"
                             :on-click="() => $emit('toggle-all')"
                         />
@@ -26,9 +27,9 @@
                         :triggers="['hover']"
                     >
                         <EscrButton
-                            label="Select Visible"
+                            label="Select visible"
                             size="small"
-                            color="outline-primary"
+                            color="outline-text"
                             :disabled="allVisibleSelected || pages.length === 0 || isUpdating"
                             :on-click="() => $emit('select-visible')"
                         />
@@ -37,8 +38,8 @@
                         </template>
                     </VDropdown>
                     <EscrButton
-                        label="Select None"
-                        color="outline-primary"
+                        label="Select none"
+                        color="outline-text"
                         size="small"
                         :disabled="!hasSelections || isUpdating"
                         :on-click="() => $emit('deselect-all')"
@@ -52,7 +53,7 @@
                     "
                     class="escr-default-transcription"
                 >
-                    <label>Default transcription layer:</label>
+                    <label>Default transcription</label>
                     <EscrDropdown
                         :options="transcriptionOptions"
                         :disabled="isUpdating"
@@ -61,7 +62,7 @@
                     <EscrButton
                         label="Apply to selected"
                         size="small"
-                        color="outline-primary"
+                        color="outline-text"
                         :disabled="!hasSelections"
                         :on-click="() => $emit('apply-default')"
                     />
@@ -93,7 +94,7 @@
                     <EscrButton
                         label="Load more"
                         class="escr-load-more-btn"
-                        color="outline-primary"
+                        color="outline-text"
                         size="small"
                         :disabled="isLoadingMore"
                         :on-click="() => $emit('load-more')"

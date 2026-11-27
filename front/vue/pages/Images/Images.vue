@@ -3,18 +3,20 @@
         class="escr-images-page"
         :breadcrumbs="breadcrumbs"
         :sidebar-actions="sidebarActions"
+        sidebar-title="Document"
         :loading="loading && loading.document"
     >
         <template #page-content>
             <div class="escr-container">
                 <!-- header with metadata and import button -->
                 <div class="escr-images-header">
-                    <div class="escr-images-title">
-                        <h3 :title="documentName">
-                            {{ documentName || "Loading..." }}
-                        </h3>
-                        <h1>Images</h1>
-                    </div>
+                    <h1 class="escr-images-title">
+                        Images
+                        <span
+                            v-if="!loading.document && partsCount"
+                            class="escr-count"
+                        >{{ partsCount.toLocaleString() }}</span>
+                    </h1>
                     <VDropdown
                         placement="bottom-end"
                         :triggers="['hover']"
@@ -41,22 +43,6 @@
                 <!-- toolbar with searching, selecting -->
                 <div class="escr-images-toolbar">
                     <div class="escr-toolbar-left">
-                        <span
-                            v-if="!loading.document && parts && parts.length"
-                            class="escr-parts-count"
-                        >
-                            {{
-                                (!loading.document && partsCount)
-                                    ? `${partsCount.toLocaleString()} images`
-                                    : ''
-                            }}
-                        </span>
-                        <EscrLoader
-                            v-else
-                            class="escr-parts-count"
-                            :loading="loading && (loading.document || loading.images)"
-                            no-data-message="0 images"
-                        />
                         <TextField
                             :disabled="(loading && loading.images) || !parts.length"
                             :on-input="onSearch"
@@ -68,9 +54,8 @@
                             placeholder="Search element name"
                         />
                         <EscrButton
-                            color="secondary"
+                            color="outline-text"
                             label="Search"
-                            size="small"
                             :disabled="(loading && loading.images) || !parts.length"
                             :on-click="onSubmitSearch"
                         />
@@ -131,6 +116,7 @@
                         <SegmentedButtonGroup
                             color="secondary"
                             name="images-display-mode"
+                            class="escr-view-switch"
                             :disabled="loading && loading.images"
                             :options="viewOptions"
                             :on-change-selection="setDisplayMode"
@@ -151,7 +137,7 @@
                         class="escr-toolbar-center"
                     >
                         <EscrButton
-                            color="secondary"
+                            color="text"
                             label="Move to top"
                             size="small"
                             :on-click="() => moveSelectedParts({ index: 0 })"
@@ -161,7 +147,7 @@
                             </template>
                         </EscrButton>
                         <EscrButton
-                            color="secondary"
+                            color="text"
                             label="Move to bottom"
                             size="small"
                             :on-click="() => moveSelectedParts({ index: -1 })"
@@ -171,7 +157,7 @@
                             </template>
                         </EscrButton>
                         <EscrButton
-                            color="secondary"
+                            color="text"
                             label="Move to..."
                             size="small"
                             :on-click="openMoveModal"
@@ -186,7 +172,7 @@
                         class="escr-toolbar-center"
                     >
                         <EscrButton
-                            color="secondary"
+                            color="text"
                             label="Segment"
                             size="small"
                             :disabled="loading && loading.images"
@@ -197,7 +183,7 @@
                             </template>
                         </EscrButton>
                         <EscrButton
-                            color="secondary"
+                            color="text"
                             label="Transcribe"
                             size="small"
                             :disabled="loading && loading.images"
@@ -208,7 +194,7 @@
                             </template>
                         </EscrButton>
                         <EscrButton
-                            color="secondary"
+                            color="text"
                             label="Align"
                             size="small"
                             :disabled="loading && loading.images"
@@ -220,7 +206,7 @@
                         </EscrButton>
                         <EscrButton
                             v-if="canTrain"
-                            color="secondary"
+                            color="text"
                             label="Train Model"
                             size="small"
                             :disabled="loading && loading.images || selectedParts.length === 0"
@@ -231,7 +217,7 @@
                             </template>
                         </EscrButton>
                         <EscrButton
-                            color="secondary"
+                            color="text"
                             label="Redraw Masks"
                             size="small"
                             :disabled="loading && loading.images"
@@ -242,7 +228,7 @@
                             </template>
                         </EscrButton>
                         <EscrButton
-                            color="secondary"
+                            color="text"
                             label="Export"
                             size="small"
                             :disabled="loading && loading.images"
@@ -259,7 +245,7 @@
                         >
                             <EscrButton
                                 class="context-menu-button"
-                                color="secondary"
+                                color="text"
                                 round
                                 size="small"
                                 :disabled="loading && loading.images"
@@ -292,14 +278,14 @@
                         </VMenu>
                     </div>
                     <EscrButton
-                        color="secondary"
-                        label="Clear All"
+                        color="text"
+                        label="Clear selection"
                         size="small"
                         :disabled="loading && loading.images"
                         :on-click="selectNone"
                     >
                         <template #button-icon>
-                            <XCircleFilledIcon />
+                            <ClearIcon />
                         </template>
                     </EscrButton>
                 </div>
@@ -540,6 +526,7 @@
     </EscrPage>
 </template>
 <script>
+import { X } from "lucide";
 import { Dropdown as VDropdown, Menu as VMenu } from "floating-vue";
 import { range } from "lodash";
 import ReconnectingWebSocket from "reconnectingwebsocket";
@@ -556,7 +543,6 @@ import ExportIcon from "../../components/Icons/ExportIcon/ExportIcon.vue";
 import DownloadArchiveModal from "../../components/DownloadArchiveModal/DownloadArchiveModal.vue";
 import DownloadIcon from "../../components/Icons/DownloadIcon/DownloadIcon.vue";
 import ExportModal from "../../components/ExportModal/ExportModal.vue";
-import GridIcon from "../../components/Icons/GridIcon/GridIcon.vue";
 import HiddenImagesIndicator from "./HiddenImagesIndicator.vue";
 import HorizMenuIcon from "../../components/Icons/HorizMenuIcon/HorizMenuIcon.vue";
 import ImageCard from "../../components/ImageCard/ImageCard.vue";
@@ -564,7 +550,7 @@ import ImageWorkflowStatus from "./ImageWorkflowStatus.vue";
 import ImportIcon from "../../components/Icons/ImportIcon/ImportIcon.vue";
 import ImportModal from "../../components/ImportModal/ImportModal.vue";
 import LineOrderingIcon from "../../components/Icons/LineOrderingIcon/LineOrderingIcon.vue";
-import ListIcon from "../../components/Icons/ListIcon/ListIcon.vue";
+import { GridIcon, ListIcon } from "../../components/Icons/Lucide/icons";
 import MasksIcon from "../../components/Icons/MasksIcon/MasksIcon.vue";
 import ModelsIcon from "../../components/Icons/ModelsIcon/ModelsIcon.vue";
 import ModelsPanel from "../../components/ModelsPanel/ModelsPanel.vue";
@@ -585,9 +571,13 @@ import TrainIcon from "../../components/Icons/TrainIcon/TrainIcon.vue";
 import TranscribeIcon from "../../components/Icons/TranscribeIcon/TranscribeIcon.vue";
 import TranscribeModal from "../../components/TranscribeModal/TranscribeModal.vue";
 import TrashIcon from "../../components/Icons/TrashIcon/TrashIcon.vue";
-import XCircleFilledIcon from "../../components/Icons/XCircleFilledIcon/XCircleFilledIcon.vue";
 import "../../components/VerticalMenu/VerticalMenu.css";
+import "../../components/Common/DetailHeader.css";
 import "./Images.css";
+
+import lucideIcon from "../../components/Icons/Lucide/lucideIcon";
+
+const ClearIcon = lucideIcon(X);
 
 export default {
     name: "EscrImages",
@@ -598,6 +588,7 @@ export default {
         DownloadArchiveModal,
         DownloadIcon,
         EscrButton,
+        ClearIcon,
         EscrLoader,
         EscrPage,
         EscrTable,
@@ -641,7 +632,6 @@ export default {
         TrashIcon,
         VDropdown,
         VMenu,
-        XCircleFilledIcon,
     },
     props: {
         /**

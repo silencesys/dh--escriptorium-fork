@@ -1,0 +1,136 @@
+/*
+ * Virtual keyboard (@escriptorium/virtual-keyboard, Bulma inside
+ * #teklia-virtual-keyboard): a tray of raised keycaps below the field it
+ * types into, as wide as that field (--vk-width, see VirtualKeyboard/fitKeyboard.js).
+ * Inline sizes set by the package need !important.
+ */
+html:has(#main.escr-vue-enabled) #teklia-virtual-keyboard {
+    width: var(--vk-width, auto);
+    max-width: calc(100vw - 32px);
+    margin-top: 8px;
+}
+html:has(#main.escr-vue-enabled) #teklia-virtual-keyboard .message {
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid var(--divider);
+    border-radius: 14px;
+    background-color: var(--background2);
+    box-shadow: 0 12px 32px rgb(0 0 0 / 14%);
+    font-family: "Noto Sans", sans-serif;
+    font-size: 14px;
+    color: var(--text1);
+}
+
+/* header: keyboard picker and management, quiet 28px controls */
+html:has(#main.escr-vue-enabled) #teklia-virtual-keyboard .message-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--divider);
+    border-radius: 0;
+    background-color: var(--background1);
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) #teklia-virtual-keyboard .message-header .control {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 !important;
+}
+html:has(#main.escr-vue-enabled) #teklia-virtual-keyboard .message-header .control:last-child {
+    margin-left: auto;
+}
+html:has(#main.escr-vue-enabled) #teklia-virtual-keyboard .message-header :is(.button, select) {
+    height: 28px;
+    margin: 0 !important;
+    padding: 0 10px;
+    border: 1px solid var(--divider);
+    border-radius: 7px;
+    background-color: var(--background1);
+    box-shadow: none;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) #teklia-virtual-keyboard .message-header .select select {
+    padding-right: 28px;
+}
+html:has(#main.escr-vue-enabled) #teklia-virtual-keyboard .message-header .select::after {
+    border-color: var(--text2) !important;
+}
+html:has(#main.escr-vue-enabled) #teklia-virtual-keyboard .message-header .button:hover {
+    background-color: var(--nav-hover);
+}
+
+/* keys: rows fill the width, every key an equal share */
+html:has(#main.escr-vue-enabled) #teklia-virtual-keyboard .message-body {
+    padding: 10px;
+    border: none;
+    background: transparent;
+}
+html:has(#main.escr-vue-enabled) #teklia-virtual-keyboard .message-body > div {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+html:has(#main.escr-vue-enabled) #teklia-virtual-keyboard .message-body .is-flex {
+    gap: 6px;
+}
+html:has(#main.escr-vue-enabled) #teklia-virtual-keyboard .message-body .is-flex > span {
+    display: flex;
+    flex: 1 1 0;
+    min-width: 0;
+}
+html:has(#main.escr-vue-enabled) #teklia-virtual-keyboard .key-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    width: 100% !important;
+    min-width: 2.25rem;
+    padding: 4px;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background-color: var(--background1);
+    /* the keycap's lower edge; it goes away when pressed */
+    box-shadow: 0 2px 0 var(--background2-darker);
+    font-family: inherit;
+    color: var(--text1);
+    cursor: pointer;
+    transition: transform 0.05s ease-out, box-shadow 0.05s ease-out;
+}
+html:has(#main.escr-vue-enabled) #teklia-virtual-keyboard .key-button:hover {
+    border-color: var(--background2-darker);
+}
+html:has(#main.escr-vue-enabled) #teklia-virtual-keyboard .key-button:active {
+    transform: translateY(2px);
+    box-shadow: 0 0 0 var(--background2-darker);
+}
+html:has(#main.escr-vue-enabled) #teklia-virtual-keyboard .key-button.is-selected {
+    border-color: var(--primary);
+    box-shadow: 0 2px 0 var(--primary-focus), 0 0 0 3px var(--primary-focus);
+}
+/* unassigned keys: an empty slot, not a key */
+html:has(#main.escr-vue-enabled) #teklia-virtual-keyboard .key-button:not(:has(p, img)) {
+    border-style: dashed;
+    background-color: transparent;
+    box-shadow: none;
+    cursor: default;
+}
+/* the character, in the transcription font */
+html:has(#main.escr-vue-enabled) #teklia-virtual-keyboard .key-button p.is-marginless {
+    font-family: var(--transcription-font-family, "Noto Sans", sans-serif);
+    font-size: 1.15rem !important;
+    line-height: 1.1;
+}
+/* the physical key it's bound to, as a small hint */
+html:has(#main.escr-vue-enabled) #teklia-virtual-keyboard .key-button .small-tag {
+    padding: 0;
+    background: none;
+    font-size: 10.5px !important;
+    line-height: 1;
+    color: var(--text3);
+}

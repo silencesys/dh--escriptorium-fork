@@ -78,7 +78,7 @@ import { mapActions, mapState } from "vuex";
 import AutocompleteField from "../AutocompleteDropdown/AutocompleteField.vue";
 import EscrButton from "../Button/Button.vue";
 import EscrModal from "../Modal/Modal.vue";
-import XIcon from "../Icons/XIcon/XIcon.vue";
+import { XIcon } from "../Icons/Lucide/icons";
 import DropdownField from "../Dropdown/DropdownField.vue";
 import "../Common/Form.css";
 import "./SegmentModal.css";

@@ -636,6 +636,7 @@ export default Vue.extend({
                     ],
                     activeTool: this.activeTool,
                     setActiveTool: this.setActiveTool,
+                    startPan: (event) => this.$parent.zoom.panFrom(event, this.$refs.segZoomContainer),
                 });
                 this.currentMode = this.segmenter.mode;
                 this.$store.commit("document/setSegmentationMode", this.currentMode);

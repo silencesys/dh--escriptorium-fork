@@ -1,18 +1,29 @@
 <template>
     <div class="escr-page-container">
-        <div class="escr-page">
-            <EscrBreadcrumbs
+        <!-- Vue pages require login; the navigation also gets this page's
+             breadcrumbs (top bar) and actions (below the default options) -->
+        <EscrGlobalNavigation is-authenticated>
+            <template
                 v-if="breadcrumbs && breadcrumbs.length"
-                :items="breadcrumbs"
-            />
+                #crumbs
+            >
+                <EscrBreadcrumbs :items="breadcrumbs" />
+            </template>
+            <template
+                v-if="sidebarActions && sidebarActions.length"
+                #contextual
+            >
+                <EscrSidebar
+                    :actions="sidebarActions"
+                    :loading="loading"
+                    :title="sidebarTitle"
+                />
+            </template>
+        </EscrGlobalNavigation>
+        <div class="escr-page">
             <slot name="page-content" />
             <Alerts />
         </div>
-        <EscrSidebar
-            v-if="sidebarActions && sidebarActions.length"
-            :actions="sidebarActions"
-            :loading="loading"
-        />
     </div>
 </template>
 <script>
@@ -20,11 +31,12 @@ import ReconnectingWebSocket from "reconnectingwebsocket";
 import { mapActions } from "vuex";
 import Alerts from "../../components/Toast/ToastGroup.vue";
 import EscrBreadcrumbs from "../../components/Breadcrumbs/Breadcrumbs.vue";
+import EscrGlobalNavigation from "../../components/GlobalNavigation/GlobalNavigation.vue";
 import EscrSidebar from "../../components/Sidebar/Sidebar.vue";
 
 export default {
     name: "EscrPage",
-    components: { Alerts, EscrBreadcrumbs, EscrSidebar },
+    components: { Alerts, EscrBreadcrumbs, EscrGlobalNavigation, EscrSidebar },
     props: {
         /**
          * An array of breadcrumbs objects, each strctured as follows:
@@ -57,7 +69,14 @@ export default {
         sidebarActions: {
             type: Array,
             default: () => [],
-        }
+        },
+        /**
+         * Heading for the sidebar actions, naming what they belong to (e.g. "Project").
+         */
+        sidebarTitle: {
+            type: String,
+            default: "",
+        },
     },
     created() {
         // intercept all websocket messages

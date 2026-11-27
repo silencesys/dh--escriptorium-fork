@@ -280,17 +280,19 @@
 <script>
 import { Menu as VMenu } from "floating-vue";
 import { mapActions, mapState } from "vuex";
-import ChevronDownIcon from "../Icons/ChevronDownIcon/ChevronDownIcon.vue";
+import {
+    ChevronDownIcon,
+    PencilIcon,
+    PlusIcon,
+    ToggleOffIcon,
+    ToggleOnIcon,
+    XIcon,
+} from "../Icons/Lucide/icons";
 import ConfirmModal from "../ConfirmModal/ConfirmModal.vue";
 import DropdownField from "../Dropdown/DropdownField.vue";
 import EscrButton from "../Button/Button.vue";
 import EscrModal from "../Modal/Modal.vue";
-import PencilIcon from "../Icons/PencilIcon/PencilIcon.vue";
-import PlusIcon from "../Icons/PlusIcon/PlusIcon.vue";
 import TextField from "../TextField/TextField.vue";
-import ToggleOffIcon from "../Icons/ToggleOffIcon/ToggleOffIcon.vue";
-import ToggleOnIcon from "../Icons/ToggleOnIcon/ToggleOnIcon.vue";
-import XIcon from "../Icons/XIcon/XIcon.vue";
 import "./AnnotationOntologyTable.css";
 
 export default {

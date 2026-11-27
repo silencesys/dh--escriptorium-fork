@@ -37,28 +37,6 @@
             </template>
         </VDropdown>
         <template v-if="displayMode === 'regions'">
-            <!-- toggle region labels -->
-            <VDropdown
-                id="toggle-region-labels"
-                theme="escr-tooltip-small"
-                placement="bottom"
-                :distance="8"
-                :triggers="['hover']"
-            >
-                <ToggleButton
-                    color="primary"
-                    :checked="regionLabelsEnabled"
-                    :disabled="disabled"
-                    :on-change="onToggleRegionLabels"
-                >
-                    <template #button-icon>
-                        <i class="fas fa-tag" />
-                    </template>
-                </ToggleButton>
-                <template #popper>
-                    Toggle region labels
-                </template>
-            </VDropdown>
             <!-- add region tool -->
             <VDropdown
                 id="add-regions"
@@ -333,72 +311,46 @@
                 </template>
             </VDropdown>
         </div>
-        <VDropdown
-            v-if="!toolbarDetached"
-            theme="escr-tooltip-small"
-            class="new-section with-separator"
-            placement="bottom"
-            :distance="8"
-            :triggers="['hover']"
-        >
-            <EscrButton
-                class="attach-detach-toolbar"
-                color="text"
-                :on-click="toggleToolbarDetached"
-                :disabled="disabled"
-            >
-                <template #button-icon>
-                    <DetachToolbarIcon />
-                </template>
-            </EscrButton>
-            <template #popper>
-                Detach toolbar
-            </template>
-        </VDropdown>
-        <div
-            v-else
-            class="new-section with-separator"
-        >
-            <EscrButton
-                color="text"
-                class="attach-detach-toolbar"
-                :on-click="toggleToolbarDetached"
-                :disabled="disabled"
-            >
-                <template #button-icon>
-                    <AttachToolbarIcon />
-                </template>
-            </EscrButton>
-        </div>
     </div>
 </template>
 <script>
 import { Dropdown as VDropdown, Menu as VMenu } from "floating-vue";
 import { mapState } from "vuex";
-import AttachToolbarIcon from "../Icons/AttachToolbarIcon/AttachToolbarIcon.vue";
-import ChangeTypeIcon from "../Icons/ChangeTypeIcon/ChangeTypeIcon.vue";
-import ChevronDownIcon from "../Icons/ChevronDownIcon/ChevronDownIcon.vue";
 import DetachableMixin from "./DetachableMixin.vue";
-import DetachToolbarIcon from "../Icons/DetachToolbarIcon/DetachToolbarIcon.vue";
-import DragVerticalIcon from "../Icons/DragVerticalIcon/DragVerticalIcon.vue";
 import EscrButton from "../Button/Button.vue";
-import JoinIcon from "../Icons/JoinIcon/JoinIcon.vue";
-import LineToolIcon from "../Icons/LineToolIcon/LineToolIcon.vue";
-import LinkIcon from "../Icons/LinkIcon/LinkIcon.vue";
-import RegionToolIcon from "../Icons/RegionToolIcon/RegionToolIcon.vue";
-import ReverseIcon from "../Icons/ReverseIcon/ReverseIcon.vue";
-import ScissorsIcon from "../Icons/ScissorsIcon/ScissorsIcon.vue";
 import ToggleButton from "../ToggleButton/ToggleButton.vue";
-import TrashIcon from "../Icons/TrashIcon/TrashIcon.vue";
-import UnlinkIcon from "../Icons/UnlinkIcon/UnlinkIcon.vue";
+import {
+    ArrowLeftRight,
+    ChevronDown,
+    GripVertical,
+    Link,
+    Merge,
+    PenLine,
+    Scissors,
+    SquarePlus,
+    Tag,
+    Trash,
+    Unlink,
+} from "lucide";
+import lucideIcon from "../Icons/Lucide/lucideIcon";
+
+const ChangeTypeIcon = lucideIcon(Tag);
+const ChevronDownIcon = lucideIcon(ChevronDown);
+const DragVerticalIcon = lucideIcon(GripVertical);
+const JoinIcon = lucideIcon(Merge);
+const LineToolIcon = lucideIcon(PenLine);
+const LinkIcon = lucideIcon(Link);
+const RegionToolIcon = lucideIcon(SquarePlus);
+const ReverseIcon = lucideIcon(ArrowLeftRight);
+const ScissorsIcon = lucideIcon(Scissors);
+const TrashIcon = lucideIcon(Trash);
+const UnlinkIcon = lucideIcon(Unlink);
 
 export default {
     name: "EscrDetachableToolbar",
     components: {
-        AttachToolbarIcon,
         ChangeTypeIcon,
         ChevronDownIcon,
-        DetachToolbarIcon,
         DragVerticalIcon,
         EscrButton,
         JoinIcon,

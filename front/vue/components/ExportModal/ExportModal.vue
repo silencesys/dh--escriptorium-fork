@@ -91,7 +91,7 @@ import MultiSelectField from "../MultiSelectDropdown/MultiSelectField.vue";
 import DropdownField from "../Dropdown/DropdownField.vue";
 import EscrButton from "../Button/Button.vue";
 import EscrModal from "../Modal/Modal.vue";
-import XIcon from "../Icons/XIcon/XIcon.vue";
+import { XIcon } from "../Icons/Lucide/icons";
 import "../Common/Form.css";
 import "./ExportModal.css";
 

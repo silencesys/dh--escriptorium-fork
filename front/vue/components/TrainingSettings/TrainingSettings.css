@@ -1,0 +1,202 @@
+/* training settings in the model step: Default / Faster / Custom, and with
+   Custom every setting in a compact two-column grid */
+/* a section of its own in the panel: a divider across, and a heading like
+   the panel's other sections */
+.escr-training-settings {
+    display: flex;
+    flex-flow: column;
+    margin: 4px -20px 0;
+    padding: 4px 20px 0;
+    border-top: 1px solid var(--divider);
+}
+/* the heading stays at the top of the panel while its section scrolls
+   (the panel's other headings do the same, see ModelTraining.css) */
+.escr-training-settings .escr-settings-title {
+    color: var(--text1);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 20px;
+}
+.escr-training-settings .escr-form-field {
+    margin: 0;
+}
+
+/* mode: a track with three thirds, like the model type */
+.escr-training-settings .escr-settings-mode {
+    display: flex;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 8px;
+    background-color: var(--nav-hover);
+}
+.escr-training-settings .escr-settings-mode button {
+    flex: 1 1 0;
+    height: 28px;
+    padding: 0 8px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+}
+.escr-training-settings .escr-settings-mode button:hover:not(:disabled) {
+    color: var(--text1);
+}
+.escr-training-settings .escr-settings-mode button.active {
+    background-color: var(--background1);
+    color: var(--text1);
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 12%);
+}
+.escr-training-settings .escr-settings-mode button:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--primary-focus);
+}
+.escr-training-settings .escr-train-hint {
+    margin: 8px 0 0;
+    color: var(--text3);
+    font-size: 12px;
+    line-height: 16px;
+}
+
+/* custom: the settings in labelled groups */
+.escr-training-settings .escr-settings-groups {
+    display: flex;
+    flex-flow: column;
+    gap: 24px;
+    margin-top: 24px;
+}
+.escr-training-settings .escr-settings-group {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+/* a group's name, with a hairline running on to the edge */
+.escr-training-settings .escr-settings-group legend {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin: 0 0 12px;
+    padding: 0;
+    color: var(--text3);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    line-height: 16px;
+    text-transform: uppercase;
+}
+.escr-training-settings .escr-settings-group legend::after {
+    content: "";
+    flex: 1 1 auto;
+    border-top: 1px solid var(--divider);
+}
+.escr-training-settings .escr-settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 12px;
+}
+.escr-training-settings .escr-setting {
+    display: flex;
+    flex-flow: column;
+    gap: 6px;
+    min-width: 0;
+    margin: 0;
+}
+.escr-training-settings .escr-setting > span {
+    overflow: hidden;
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 16px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.escr-training-settings .escr-setting--wide {
+    grid-column: 1 / -1;
+}
+.escr-training-settings .escr-setting :is(input:not([type="checkbox"]), select, textarea) {
+    box-sizing: border-box;
+    width: 100%;
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background-color: var(--background1);
+    color: var(--text1);
+    font-size: 13px;
+}
+.escr-training-settings .escr-setting textarea {
+    height: auto;
+    min-height: 76px;
+    padding: 10px 12px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    line-height: 18px;
+    resize: vertical;
+}
+.escr-training-settings .escr-setting :is(input, select, textarea):hover:not(:disabled) {
+    border-color: var(--background2-darker);
+}
+.escr-training-settings .escr-setting :is(input, select, textarea):focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-focus);
+}
+.escr-training-settings .escr-setting :is(input, select, textarea):disabled {
+    background-color: var(--background2);
+    color: var(--text3);
+}
+.escr-training-settings .escr-setting :is(input, textarea)::placeholder {
+    color: var(--text3);
+}
+/* checkboxes: one line, aligned with the inputs beside them */
+.escr-training-settings .escr-setting--check {
+    flex-flow: row;
+    align-items: center;
+    align-self: end;
+    gap: 8px;
+    height: 32px;
+    cursor: pointer;
+}
+.escr-training-settings .escr-setting--check > span {
+    color: var(--text1);
+    font-size: 13px;
+    font-weight: 400;
+    white-space: normal;
+}
+.escr-training-settings .escr-setting--check input {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    accent-color: var(--primary);
+}
+
+.escr-training-settings .escr-settings-errors {
+    margin: 0;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background-color: color-mix(in srgb, var(--alert) 10%, transparent);
+    color: var(--alert);
+    font-size: 12px;
+    line-height: 18px;
+    list-style: none;
+}
+
+/* numbers without spinners: the defaults show in the empty fields */
+.escr-training-settings .escr-setting input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+}
+.escr-training-settings .escr-setting input[type="number"]::-webkit-inner-spin-button,
+.escr-training-settings .escr-setting input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.escr-training-settings .escr-setting input.invalid {
+    border-color: var(--alert);
+}

@@ -30,8 +30,12 @@ Vue.use(FloatingVue, {
         "tags-dropdown": {
             $extend: "dropdown",
         },
+        // menus open on click (or programmatically) and stay open until a click
+        // elsewhere or an item is picked: the "menu" theme would also hide them
+        // shortly after the pointer leaves the popper
         "vertical-menu": {
             $extend: "menu",
+            popperTriggers: [],
         },
     },
 });

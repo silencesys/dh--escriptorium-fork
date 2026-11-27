@@ -81,7 +81,7 @@ import EscrButton from "../Button/Button.vue";
 import EscrModal from "../Modal/Modal.vue";
 import MetadataField from "../MetadataField/MetadataField.vue";
 import TextField from "../TextField/TextField.vue";
-import XIcon from "../Icons/XIcon/XIcon.vue";
+import { XIcon } from "../Icons/Lucide/icons";
 import "./ElementDetailsModal.css";
 
 export default {

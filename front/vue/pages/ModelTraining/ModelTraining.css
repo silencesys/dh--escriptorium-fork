@@ -1,86 +1,184 @@
-/* page layout */
-.escr-page-container.escr-model-training .escr-page {
-    padding-bottom: 2rem !important;
+/*
+ * Model training: the title with the Browse / Selected switch, then the
+ * training data on the left and, on the right, one panel that runs from the
+ * data to the model to the start button. Both fill the viewport and scroll on
+ * their own, so the start button is always in view.
+ */
+.escr-body #main.escr-vue-enabled .escr-model-training .escr-page {
+    padding-bottom: 20px;
+}
+.escr-model-training .escr-training {
+    display: flex;
+    flex-flow: column;
+    gap: 20px;
+    /* the viewport under the top bar, less the page's top and bottom gutters */
+    height: calc(100vh - 56px - var(--page-gutter-top, 8px) - 20px);
+    min-height: 560px;
 }
 
-.escr-page-container.escr-model-training .escr-training-container {
+/* ---- header ---- */
+.escr-model-training .escr-training-header {
     display: flex;
-    flex-direction: column;
-    height: calc(100vh - 100px);
-    min-height: 600px;
-    gap: 0;
+    flex: none;
+    align-items: center;
+    gap: 24px;
+}
+.escr-model-training .escr-training-header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 33px;
 }
 
-.escr-page-container.escr-model-training .escr-training-collections {
-    display: flex;
-    flex-direction: row;
-    gap: 2rem;
-    flex: 1;
+/* ---- body: the data, and the panel ---- */
+.escr-model-training .escr-training-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 400px;
+    gap: 24px;
+    flex: 1 1 auto;
     min-height: 0;
 }
-
-/* left side: tabbed browse/select */
-.escr-model-training .escr-training-data {
-    flex: 1;
+.escr-model-training .escr-training-data,
+.escr-model-training .escr-tab-panel {
     display: flex;
-    flex-direction: column;
+    flex-flow: column;
     min-width: 0;
     min-height: 0;
 }
+.escr-model-training .escr-tab-panel {
+    flex: 1 1 auto;
+}
+.escr-model-training .escr-tab-panel:focus {
+    outline: none;
+}
+.escr-model-training .escr-tab-panel > .escr-spinner {
+    margin: 48px auto;
+}
 
-.escr-tab-content {
-    flex: 1;
+/* nothing selected yet */
+.escr-model-training .escr-training-empty {
     display: flex;
-    flex-direction: column;
-    min-height: 0;
-}
-
-.escr-tab-panel {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-}
-
-.escr-model-training .escr-tab-panel h2 {
-    flex-shrink: 0;
-    margin-bottom: 1rem;
-}
-
-.escr-model-training .escr-tab-panel .escr-browser.escr-card {
-    flex: 1;
-    max-height: none;
-    min-height: 0;
-    height: auto;
-}
-
-.empty-state-card {
-    display: flex;
-    flex-direction: column;
+    flex: 1 1 auto;
+    flex-flow: column;
     align-items: center;
     justify-content: center;
+    gap: 4px;
+    border: 1px dashed var(--divider);
+    border-radius: 12px;
+    color: var(--text1);
+    font-size: 14px;
     text-align: center;
-    height: 100%;
-    gap: 1rem;
-    background-color: var(--background-secondary);
+}
+.escr-model-training .escr-training-empty p {
+    margin: 0;
+}
+.escr-model-training .escr-training-empty .escr-training-empty-hint {
+    margin-bottom: 12px;
+    color: var(--text3);
+    font-size: 13px;
 }
 
-/* right sidebar (containing collection management) */
-.escr-model-training .escr-training-sidebar {
-    flex: 0 0 380px;
+/* ---- the panel ---- */
+.escr-model-training .escr-training-panel {
     display: flex;
-    flex-direction: column;
+    flex-flow: column;
     min-height: 0;
-    max-width: 380px;
+    overflow-y: auto;
+    border: 1px solid var(--divider);
+    border-radius: 12px;
+    background-color: var(--background1);
+    scrollbar-width: thin;
+}
+/* one rhythm for the whole panel: 20px around a section, 14px under its
+   heading, 16px between fields, 6px from a label to its field */
+.escr-model-training .escr-training-step {
+    padding: 4px 20px 20px;
+}
+.escr-model-training .escr-training-step + .escr-training-step {
+    border-top: 1px solid var(--divider);
+}
+/* the model step takes the rest, so its start button sits at the bottom */
+.escr-model-training .escr-training-step--model {
+    display: flex;
+    flex: 1 0 auto;
+    flex-flow: column;
+    padding-bottom: 0;
+}
+/* section headings stay at the top of the panel while their section
+   scrolls under them, as the start button stays at the bottom */
+.escr-model-training .escr-training-step h2,
+.escr-model-training .escr-training-step .escr-settings-title {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    margin: 0 -20px 6px;
+    padding: 16px 20px 8px;
+    background-color: var(--background1);
+    color: var(--text1);
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 20px;
 }
 
-.escr-model-training .escr-training-sidebar h2 {
-    font-size: 1.25rem;
-    margin-bottom: 1rem;
+/* ---- fields in the panel: the compact control scale ---- */
+.escr-model-training .escr-training-panel .escr-field-label {
+    margin: 0 0 6px;
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 16px;
 }
-
-/* model training form footer */
-.escr-model-training .escr-training-footer {
-    flex-shrink: 0;
-    margin-top: auto;
+.escr-model-training .escr-training-panel :is(.escr-dropdown select, .escr-autocomplete-dropdown input, .escr-text-field input) {
+    box-sizing: border-box;
+    height: 32px;
+    min-height: 32px;
+    padding: 0 30px 0 10px;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background-color: var(--background1);
+    color: var(--text1);
+    font-size: 13px;
+}
+.escr-model-training .escr-training-panel .escr-text-field input {
+    padding-right: 10px;
+}
+/* upstream's fields add their own space above the control */
+.escr-model-training .escr-training-panel :is(input:not([type="checkbox"], [type="radio"]), select, textarea) {
+    margin: 0;
+}
+.escr-model-training .escr-training-panel :is(.escr-dropdown select, .escr-autocomplete-dropdown input, .escr-text-field input):not(:disabled):hover {
+    border-color: var(--background2-darker);
+}
+.escr-model-training .escr-training-panel :is(.escr-dropdown select, .escr-autocomplete-dropdown input, .escr-text-field input):focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-focus);
+}
+.escr-model-training .escr-training-panel :is(.escr-autocomplete-dropdown input, .escr-text-field input):disabled {
+    border-color: var(--divider);
+    background-color: var(--background2);
+    color: var(--text3);
+}
+.escr-model-training .escr-training-panel :is(.escr-autocomplete-dropdown input, .escr-text-field input)::placeholder {
+    color: var(--text3);
+}
+.escr-model-training .escr-training-panel .escr-dropdown .escr-chevron-down-icon {
+    top: 50%;
+    right: 10px;
+    width: 14px;
+    height: 14px;
+    transform: translateY(-50%);
+    fill: var(--text2);
+}
+/* what scrolls under a heading fades out instead of being cut off */
+.escr-model-training .escr-training-step h2::after,
+.escr-model-training .escr-training-step .escr-settings-title::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    right: 0;
+    left: 0;
+    height: 6px;
+    background: linear-gradient(var(--background1), transparent);
+    pointer-events: none;
 }
