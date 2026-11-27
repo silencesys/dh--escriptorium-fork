@@ -208,11 +208,29 @@ export class WheelZoom {
                 this.draggable.bind(this)(event);
             }
 
-            target.container.addEventListener("mousewheel", scroll.bind(this));
-            target.container.addEventListener(
-                "DOMMouseScroll",
-                scroll.bind(this),
-            ); // firefox
+            if (this.legacyModeEnabled) {
+                target.container.addEventListener("mousewheel", scroll.bind(this));
+                target.container.addEventListener(
+                    "DOMMouseScroll",
+                    scroll.bind(this),
+                ); // firefox
+            } else {
+                // new UI: the standard wheel event (both directions, for touchpad
+                // swipes) and Safari's pinch gestures
+                target.container.addEventListener(
+                    "wheel",
+                    (event) => {
+                        this.scrolling = target;
+                        this.wheeled(event);
+                    },
+                    { passive: false },
+                );
+                target.container.addEventListener("gesturestart", (event) => {
+                    this.scrolling = target;
+                    this.pinchStarted(event);
+                });
+                target.container.addEventListener("gesturechange", (event) => this.pinched(event));
+            }
             target.container.addEventListener("mousedown", drag.bind(this));
         } else {
             target.container.classList.add("mirror");
@@ -280,6 +298,100 @@ export class WheelZoom {
         };
 
         return this.zoomTo(zoom_point, delta * this.factor);
+    }
+
+    /**
+     * New UI wheel: a touchpad swipe pans, a pinch (a wheel with ctrlKey in
+     * Chrome and Firefox, or Ctrl + wheel) zooms in proportion around the
+     * pointer, a mouse wheel zooms a step per notch. What a frame's events ask
+     * for is applied once, in that frame: touchpads send dozens a second.
+     */
+    wheeled(e) {
+        if (this.disabled) return;
+        e.preventDefault();
+        // deltas in pixels (deltaMode: 0 pixels, 1 lines, 2 pages)
+        const unit = [1, 16, 400][e.deltaMode] || 1;
+        const dx = e.deltaX * unit;
+        const dy = e.deltaY * unit;
+        const pending = this.pendingView();
+        if (e.ctrlKey) {
+            pending.zoom += Math.max(-0.5, Math.min(0.5, -dy * 0.01));
+            pending.point = this.pointerIn(e);
+        } else if (this.fromTouchpad(e)) {
+            pending.pan.x -= dx;
+            pending.pan.y -= dy;
+        } else if (dy) {
+            pending.zoom -= Math.sign(dy) * this.factor;
+            pending.point = this.pointerIn(e);
+        }
+    }
+
+    /**
+     * Whether a wheel event comes from a touchpad (else from a mouse wheel).
+     * The events of one gesture, momentum included, keep the kind of the first.
+     */
+    fromTouchpad(e) {
+        const kind = this.wheelKind;
+        if (kind && e.timeStamp - kind.at < 250) {
+            kind.at = e.timeStamp;
+            return kind.touchpad;
+        }
+        let touchpad;
+        if (e.deltaX !== 0 || !Number.isInteger(e.deltaY)) {
+            touchpad = true;
+        } else if (typeof e.wheelDeltaY === "number" && e.wheelDeltaY !== 0) {
+            // Chrome and Safari: a touchpad's wheelDeltaY is -3 times its deltaY,
+            // a mouse notch's is 120
+            touchpad = e.wheelDeltaY === -3 * e.deltaY;
+        } else {
+            // Firefox: mouse wheels scroll by lines
+            touchpad = e.deltaMode === 0;
+        }
+        this.wheelKind = { touchpad, at: e.timeStamp };
+        return touchpad;
+    }
+
+    /** Safari pinch: gesture events, scale relative to the gesture's start. */
+    pinchStarted(e) {
+        if (this.disabled) return;
+        e.preventDefault();
+        this.pinchBase = this.scale;
+    }
+
+    pinched(e) {
+        if (this.disabled || !this.pinchBase) return;
+        e.preventDefault();
+        const pending = this.pendingView();
+        pending.scaleTo = this.pinchBase * e.scale;
+        pending.point = this.pointerIn(e);
+    }
+
+    /** The pointer, in the zoomed element's pixels (as zoomTo takes it). */
+    pointerIn(e) {
+        const bounds = (this.scrolling || this.targets[0]).element.getBoundingClientRect();
+        return { x: e.clientX - bounds.left, y: e.clientY - bounds.top };
+    }
+
+    /** The pan and zoom asked for in this frame, applied at its start. */
+    pendingView() {
+        if (this.pending) return this.pending;
+        const pending = (this.pending = { zoom: 0, pan: { x: 0, y: 0 } });
+        requestAnimationFrame(() => {
+            this.pending = null;
+            let zoom = pending.zoom;
+            if (pending.scaleTo) zoom += Math.log(pending.scaleTo / this.scale);
+            if (zoom && pending.point) this.zoomTo(pending.point, zoom);
+            if (pending.pan.x || pending.pan.y) {
+                this.pos.x += Math.round(pending.pan.x);
+                this.pos.y += Math.round(pending.pan.y);
+                this.updateStyle({
+                    x: pending.pan.x / this.scale,
+                    y: pending.pan.y / this.scale,
+                });
+                (this.scrolling || this.targets[0]).showMap(this.pos, this.scale);
+            }
+        });
+        return pending;
     }
 
     drag(e) {

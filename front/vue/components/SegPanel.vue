@@ -894,8 +894,12 @@ export default Vue.extend({
         updateZoom(zoom) {
             // might not be mounted yet
             if (this.segmenter && this.$img.complete) {
-                this.segmenter.canvas.style.top = zoom.pos.y + "px";
-                this.segmenter.canvas.style.left = zoom.pos.x + "px";
+                // new UI: the canvas stays over the visible panel, refresh() maps
+                // the zoomed image onto it (see Segmenter.fitViewToPanel)
+                if (!this.segmenter.newUiEnabled) {
+                    this.segmenter.canvas.style.top = zoom.pos.y + "px";
+                    this.segmenter.canvas.style.left = zoom.pos.x + "px";
+                }
                 this.segmenter.refresh();
             }
         },

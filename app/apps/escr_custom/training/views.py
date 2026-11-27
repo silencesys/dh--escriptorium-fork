@@ -29,6 +29,7 @@ from .options import (
     SEGMENTATION,
     TrainingOptionsSerializer,
     kraken_defaults,
+    max_batch_size,
 )
 
 JOBS = {
@@ -56,6 +57,10 @@ def _effective_defaults(job, architecture=None):
         # upstream passes the config's limits to the trainer, and stops early
         epochs, min_epochs = train['epochs'], train['min_epochs']
         train = {**train, 'quit': 'early'}
+    if job == RECOGNITION:
+        # the batch size upstream's task uses: the server's, or the config's
+        train = {**train, 'batch_size': tasks.recognition_batch_size(architecture)
+                 or train.get('batch_size')}
     return {
         **{k: v for k, v in train.items() if k != 'spec'},
         'epochs': epochs,
@@ -79,6 +84,7 @@ class TrainingInfoView(APIView):
                 'normalization': NORMALIZATIONS,
                 'architecture': list(ARCHITECTURES),
             },
+            'limits': {'batch_size': max_batch_size()},
             'defaults': {
                 RECOGNITION: {
                     name: _effective_defaults(RECOGNITION, arch)

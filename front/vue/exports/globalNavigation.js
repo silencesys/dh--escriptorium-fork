@@ -12,6 +12,7 @@ import "../../custom/index.css";
 import enhanceFileDrops from "../../custom/fileDrop";
 import enhanceCharts from "../../custom/charts";
 import measureScrollbars from "../../custom/scrollbars";
+import stackAlerts from "../../custom/alertsStack";
 
 /*
  * Standalone navigation for pages rendered by Django. Vue pages built on
@@ -22,6 +23,7 @@ function mount() {
     enhanceFileDrops();
     enhanceCharts();
     measureScrollbars();
+    stackAlerts();
     const el = document.getElementById("vue-global-nav");
     if (!el) return;
     if (document.querySelector(".escr-global-nav")) {

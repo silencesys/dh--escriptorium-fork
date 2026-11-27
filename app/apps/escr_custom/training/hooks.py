@@ -11,10 +11,13 @@ up in core.tasks at run time are wrapped:
 - recognition_training_classes / segmentation_training_classes: the config
   classes they return are replaced by factories that add our settings, and a
   recognition model trained from scratch can get another architecture;
-- recognition_batch_size: follows that architecture;
+- recognition_batch_size: the training's own batch size, if chosen; else it
+  follows that architecture, and leaves PP-OCR its own batch size (see
+  OWN_BATCH_SIZE), with or without options;
 - KrakenTrainer: gets the epoch limits and the backbone freezing.
 
-The wrapped names behave exactly like the originals when no options are set.
+Apart from that batch size, the wrapped names behave exactly like the
+originals when no options are set.
 If upstream renames any of them, nothing is wrapped, an error is logged and
 our API refuses options (see `available()`), so training keeps working the
 upstream way.
@@ -22,6 +25,7 @@ upstream way.
 import logging
 
 from celery.signals import task_postrun, task_prerun
+from django.conf import settings
 
 from .options import RECOGNITION, SEGMENTATION, split
 
@@ -40,6 +44,16 @@ SEAMS = (
     'recognition_batch_size',
     'KrakenTrainer',
 )
+
+# Architectures whose kraken defaults are tuned to a batch size of their own:
+# PP-OCR trains in batches of 64, with BatchNorm layers and a warmup and
+# learning rate made for them; in batches of one (variables.env_example's
+# KRAKEN_TRAINING_BATCH_SIZE, which is sized for VGSL) it learns far worse. The
+# general setting doesn't apply to them, only their own one does; unset, they
+# keep kraken's default.
+OWN_BATCH_SIZE = {
+    'PPOCRv6Model': 'KRAKEN_TRAINING_BATCH_SIZE_PPOCR',
+}
 
 # the running training's options (a worker process runs one task at a time)
 _current = {'options': None, 'architecture': None}
@@ -100,8 +114,16 @@ def _wrap_classes(original, job):
 def _wrap_batch_size(original):
     def batch_size(architecture):
         options = current()
+        if options and options.get('batch_size'):
+            return options['batch_size']
         if options and architecture is None and options['architecture']:
             architecture = options['architecture']
+        own = OWN_BATCH_SIZE.get(architecture)
+        if own and not getattr(settings, own, None):
+            # None: upstream's task then takes the architecture's kraken default
+            logger.info('%s trains with its own default batch size (%s is not set)',
+                        architecture, own)
+            return None
         return original(architecture)
     batch_size.__wrapped__ = original
     return batch_size

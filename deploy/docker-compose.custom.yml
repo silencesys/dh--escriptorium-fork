@@ -11,6 +11,12 @@
 #
 # ESCR_IMAGE picks the image, e.g. ghcr.io/<owner>/<repo>:latest, or a
 # sha-xxxxxxx tag to pin a build.
+#
+# Resource caps: every service gets a CPU and memory limit, each overridable
+# in .env (ESCR_<SERVICE>_CPUS / ESCR_<SERVICE>_MEM, e.g. ESCR_GPU_MEM=12g).
+# The defaults add up to about 28 GB of memory at most; see deploy/README.md
+# for sizing them to the server. A service over its memory cap has its
+# biggest process killed (a Celery task then fails), so cap memory with room.
 
 x-custom: &custom
   image: ${ESCR_IMAGE:?set ESCR_IMAGE to this deployment's image}
@@ -19,10 +25,82 @@ x-custom: &custom
     - DJANGO_SETTINGS_MODULE=apps.escr_custom.settings
 
 services:
-  web: *custom
-  channelserver: *custom
-  celery-main: *custom
-  celery-live: *custom
-  celery-low-priority: *custom
-  celery-gpu: *custom
-  celery-intensive-inference: *custom
+  web:
+    <<: *custom
+    deploy:
+      resources:
+        limits: {cpus: "${ESCR_WEB_CPUS:-2}", memory: "${ESCR_WEB_MEM:-2g}"}
+
+  channelserver:
+    <<: *custom
+    deploy:
+      resources:
+        limits: {cpus: "${ESCR_CHANNEL_CPUS:-1}", memory: "${ESCR_CHANNEL_MEM:-512m}"}
+
+  # segmentation and transcription; -c CELERY_MAIN_CONC tasks at once share
+  # this cap: lower the concurrency along with the memory
+  celery-main:
+    <<: *custom
+    deploy:
+      resources:
+        limits: {cpus: "${ESCR_MAIN_CPUS:-4}", memory: "${ESCR_MAIN_MEM:-6g}"}
+
+  celery-live:
+    <<: *custom
+    deploy:
+      resources:
+        limits: {cpus: "${ESCR_LIVE_CPUS:-1}", memory: "${ESCR_LIVE_MEM:-1g}"}
+
+  # imports, exports, thumbnails
+  celery-low-priority:
+    <<: *custom
+    deploy:
+      resources:
+        limits: {cpus: "${ESCR_LOW_CPUS:-2}", memory: "${ESCR_LOW_MEM:-3g}"}
+
+  # training. PyTorch sizes its thread pool from the host's cores, not the
+  # cap, so it gets as many threads as CPUs (a whole number here). Its 4g
+  # /dev/shm counts against the memory cap.
+  celery-gpu:
+    <<: *custom
+    environment:
+      - DJANGO_SETTINGS_MODULE=apps.escr_custom.settings
+      - OMP_NUM_THREADS=${ESCR_GPU_CPUS:-4}
+    deploy:
+      resources:
+        limits: {cpus: "${ESCR_GPU_CPUS:-4}", memory: "${ESCR_GPU_MEM:-8g}"}
+
+  celery-intensive-inference:
+    <<: *custom
+    environment:
+      - DJANGO_SETTINGS_MODULE=apps.escr_custom.settings
+      - OMP_NUM_THREADS=${ESCR_INFERENCE_CPUS:-2}
+    deploy:
+      resources:
+        limits: {cpus: "${ESCR_INFERENCE_CPUS:-2}", memory: "${ESCR_INFERENCE_MEM:-4g}"}
+
+  # upstream's services, unchanged but for their caps
+  db:
+    deploy:
+      resources:
+        limits: {cpus: "${ESCR_DB_CPUS:-2}", memory: "${ESCR_DB_MEM:-2g}"}
+
+  redis:
+    deploy:
+      resources:
+        limits: {cpus: "${ESCR_REDIS_CPUS:-0.5}", memory: "${ESCR_REDIS_MEM:-512m}"}
+
+  nginx:
+    deploy:
+      resources:
+        limits: {cpus: "${ESCR_NGINX_CPUS:-1}", memory: "${ESCR_NGINX_MEM:-256m}"}
+
+  flower:
+    deploy:
+      resources:
+        limits: {cpus: "${ESCR_FLOWER_CPUS:-0.5}", memory: "${ESCR_FLOWER_MEM:-256m}"}
+
+  mail:
+    deploy:
+      resources:
+        limits: {cpus: "${ESCR_MAIL_CPUS:-0.25}", memory: "${ESCR_MAIL_MEM:-128m}"}

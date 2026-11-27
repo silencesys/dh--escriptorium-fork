@@ -23,6 +23,33 @@ var lastId = 0;
 // (baselines, borders, masks) and around its points (corners, baseline points)
 const HIT_TOLERANCE = 8;
 const HANDLE_TOLERANCE = 10;
+// new UI cursors drawn as 16px SVGs (Lucide shapes in a 24 unit box, black
+// with a white outline so they show on any image; `hotspot` in pixels)
+const svgCursor = (shape, hotspot, fallback) => {
+    const svg =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" ' +
+        'fill="none" stroke-linecap="round" stroke-linejoin="round">' +
+        `<g stroke="white" stroke-width="5.5">${shape}</g>` +
+        `<g stroke="black" stroke-width="2.25">${shape}</g></svg>`;
+    return `url("data:image/svg+xml,${encodeURIComponent(svg)}") ${hotspot}, ${fallback}`;
+};
+// over the edge of the selected path: double click adds a point there (pen-tool
+// with a plus)
+const ADD_POINT_CURSOR = svgCursor(
+    '<path d="M15.7 21.3a1 1 0 0 1-1.4 0l-1.6-1.6a1 1 0 0 1 0-1.4l5.6-5.6a1 1 0 0 1 1.4 0' +
+        'l1.6 1.6a1 1 0 0 1 0 1.4z"/><path d="m18 13-1.4-6.9a1 1 0 0 0-.7-.8L3.2 2a1 1 0 0 0-1.2 1.2' +
+        'l2.9 12.7a1 1 0 0 0 .8.7L13 18"/><path d="m2.3 2.3 7.3 7.3"/><circle cx="11" cy="11" r="2"/>' +
+        '<path d="M5 16v6M2 19h6"/>',
+    "1 1",
+    "copy",
+);
+// over a point: it can be dragged (move, smaller than the system's)
+const MOVE_POINT_CURSOR = svgCursor(
+    '<path d="M12 3v18M3 12h18"/><path d="m15 18-3 3-3-3"/><path d="m18 9 3 3-3 3"/>' +
+        '<path d="m6 9-3 3 3 3"/><path d="m9 6 3-3 3 3"/>',
+    "8 8",
+    "move",
+);
 function generateUniqueId() {
     return lastId++;
 }
@@ -929,7 +956,10 @@ export class Segmenter {
             this.selection.regions[i].updateDataFromCanvas();
         }
 
-        if (!this.newUiEnabled) {
+        if (this.newUiEnabled) {
+            // those a path couldn't lose stay, unpicked
+            this.clearPoints();
+        } else {
             this.showContextMenu();
         }
     }
@@ -1102,7 +1132,11 @@ export class Segmenter {
                 switch (key.toLowerCase()) {
                     case "delete":
                         // delete points or entire selection
-                        if (ctrlKey) {
+                        // (new UI: picked points go first)
+                        if (
+                            ctrlKey ||
+                            (this.newUiEnabled && this.selection.segments.length)
+                        ) {
                             this.deleteSelectedSegments();
                         } else {
                             this.deleteSelection();
@@ -1329,9 +1363,41 @@ export class Segmenter {
                 !options.segments
             ) {
                 options = { ...options, tolerance: HIT_TOLERANCE / this.getRatio() };
+                // the selection takes the clicks inside its own area, even where
+                // another line or region lies on top of it; with Shift held the
+                // top item does, so it can be added to the selection
+                if (!this.pointerShift) {
+                    const hit = this.hitSelected(point, options);
+                    if (hit) return hit;
+                }
             }
             return projectHitTest.call(project, point, options);
         };
+        // paper's hit test doesn't see the event: keep its Shift key at hand
+        this.pointerShift = false;
+        const keepShift = (event) => {
+            this.pointerShift = event.shiftKey;
+        };
+        ["mousedown", "mousemove", "mouseup"].forEach((type) =>
+            this.canvas.addEventListener(type, keepShift, true),
+        );
+        if (this.newUiEnabled) {
+            // the cursor follows the pointer (not while a drag sets its own) and
+            // the modifier keys, pressed or released without moving
+            this.lastPointer = null;
+            this.canvas.addEventListener("mousemove", (event) => {
+                this.lastPointer = event;
+                if (!event.buttons) this.refreshCursor();
+            });
+            this.canvas.addEventListener("mouseleave", () => {
+                this.lastPointer = null;
+            });
+            const onModifier = (event) => {
+                if (["Shift", "Alt"].includes(event.key)) this.refreshCursor(event);
+            };
+            document.addEventListener("keydown", onModifier);
+            document.addEventListener("keyup", onModifier);
+        }
 
         // setup outbound events
         this.updateQueue = { lines: [], regions: [] };
@@ -1491,7 +1557,7 @@ export class Segmenter {
         region.polygonPath.onMouseDown = function (event) {
             if (
                 this.activeTool === "pan" ||
-                event.event.ctrlKey ||
+                this.isMoveDrag(event.event) ||
                 this.splitting ||
                 // this.selecting ||
                 isRightClick(event.event) ||
@@ -1502,8 +1568,8 @@ export class Segmenter {
                 return;
 
             // if what we are clicking on is already selected,
-            // check there isn't something below
-            if (region.selected) {
+            // check there isn't something below (new UI: the selection stays)
+            if (region.selected && !this.newUiEnabled) {
                 let hit;
                 for (let i = 0; i < this.regions.length; i++) {
                     if (this.regions[i] != region) {
@@ -1518,6 +1584,8 @@ export class Segmenter {
             } else {
                 this.selecting = region;
             }
+
+            if (this.newUiEnabled && this.pressPoints(region, event)) return;
 
             // new UI: grabbing a border moves that whole edge along its normal (resize)
             const edge = this.newUiEnabled ? this.regionEdgeAt(region, event.point) : null;
@@ -1571,29 +1639,35 @@ export class Segmenter {
             }.bind(this);
         }.bind(this);
 
-        region.polygonPath.onMouseMove = function (event) {
-            if (this.mode != "regions") {
-                return;
-            } else if (this.newUiEnabled) {
-                this.setCursor(region.locked ? "pointer" : this.regionCursorAt(region, event.point));
-            }
-        }.bind(this);
-
-        region.polygonPath.onMouseLeave = function () {
-            if (this.newUiEnabled) {
-                this.setCursor();
-            }
-        }.bind(this);
 
         region.polygonPath.onDoubleClick = function (event) {
             // Creates a new control point in the region
             if (event.event.ctrlKey || this.mode != "regions" || region.locked) return;
-            let location = region.polygonPath.getNearestLocation(event.point);
+            let location = this.insertLocation(region.polygonPath, event);
+            if (!location) return;
             let newSegment = region.polygonPath.insert(
                 location.index + 1,
                 location,
             );
         }.bind(this);
+    }
+
+    /**
+     * Where a double click on `path` adds a point: the nearest spot on it. In
+     * the new UI none away from the edge, on a point (two quick clicks on
+     * points make a double click) or with a modifier key held.
+     */
+    insertLocation(path, event) {
+        const location = path.getNearestLocation(event.point);
+        if (!location || !this.newUiEnabled) return location;
+        const { shiftKey, altKey, ctrlKey, metaKey } = event.event;
+        if (shiftKey || altKey || ctrlKey || metaKey) return null;
+        const ratio = this.getRatio();
+        if (!this.edgeLocation(path, event.point)) return null;
+        const onPoint = path.segments.some(
+            (s) => s.point.getDistance(location.point) <= HANDLE_TOLERANCE / ratio,
+        );
+        return onPoint ? null : location;
     }
 
     /** Grab radius around a point: fixed on screen in the new UI, in image pixels before. */
@@ -1626,7 +1700,7 @@ export class Segmenter {
             segments: true,
             tolerance: HIT_TOLERANCE / this.getRatio(),
         });
-        return corner ? "move" : "pointer";
+        return corner ? MOVE_POINT_CURSOR : "pointer";
     }
 
     /** The resize cursor matching an edge normal (the direction the edge moves). */
@@ -1643,7 +1717,7 @@ export class Segmenter {
             line.baselinePath.onMouseDown = function (event) {
                 if (
                     this.activeTool === "pan" ||
-                    event.event.ctrlKey ||
+                    this.isMoveDrag(event.event) ||
                     this.splitting ||
                     isRightClick(event.event) ||
                     (this.newUiEnabled && this.isDrawing) ||
@@ -1652,6 +1726,7 @@ export class Segmenter {
                 )
                     return;
                 this.selecting = line;
+                if (this.newUiEnabled && this.pressPoints(line, event)) return;
 
                 var hit = line.baselinePath.hitTest(event.point, {
                     segments: true,
@@ -1692,9 +1767,8 @@ export class Segmenter {
 
             line.baselinePath.onDoubleClick = function (event) {
                 if (event.event.ctrlKey || this.mode != "lines") return;
-                let location = line.baselinePath.getNearestLocation(
-                    event.point,
-                );
+                let location = this.insertLocation(line.baselinePath, event);
+                if (!location) return;
                 let newSegment = line.baselinePath.insert(
                     location.index + 1,
                     location,
@@ -1703,7 +1777,7 @@ export class Segmenter {
             }.bind(this);
 
             line.baselinePath.onMouseMove = function (event) {
-                if (event.event.ctrlKey || this.mode != "lines") return;
+                if (this.newUiEnabled || event.event.ctrlKey || this.mode != "lines") return;
                 if (line.selected) this.setCursor("grab");
                 else this.setCursor("pointer");
                 var hit = line.baselinePath.hitTest(event.point, {
@@ -1716,7 +1790,7 @@ export class Segmenter {
             }.bind(this);
 
             line.baselinePath.onMouseLeave = function (_event) {
-                this.setCursor();
+                if (!this.newUiEnabled) this.setCursor();
             }.bind(this);
 
             // line.baselinePath.onMouseDrag = function(event) {
@@ -1732,7 +1806,7 @@ export class Segmenter {
             line.maskPath.onMouseDown = function (event) {
                 if (
                     this.activeTool === "pan" ||
-                    event.event.ctrlKey ||
+                    this.isMoveDrag(event.event) ||
                     this.splitting ||
                     isRightClick(event.event) ||
                     (this.newUiEnabled && this.isDrawing) ||
@@ -1741,6 +1815,7 @@ export class Segmenter {
                 )
                     return;
                 this.selecting = line;
+                if (this.newUiEnabled && this.pressPoints(line, event)) return;
 
                 var hit = line.maskPath.hitTest(event.point, {
                     segments: true,
@@ -1779,8 +1854,22 @@ export class Segmenter {
                     line.updateDataFromCanvas();
                 }.bind(this);
             }.bind(this);
+            line.maskPath.onDoubleClick = function (event) {
+                // new UI masks mode: a new point where the edge was double clicked
+                // (saved once it's moved: until then it's on a straight edge, which
+                // saving reduces away)
+                if (
+                    !this.newUiEnabled ||
+                    this.mode !== "masks" ||
+                    this.isMoveDrag(event.event)
+                )
+                    return;
+                const location = this.insertLocation(line.maskPath, event);
+                if (location) line.maskPath.insert(location.index + 1, location.point);
+            }.bind(this);
             line.maskPath.onMouseMove = function (event) {
                 if (
+                    this.newUiEnabled ||
                     event.event.ctrlKey ||
                     !["lines", "masks"].includes(this.mode)
                 )
@@ -1789,7 +1878,7 @@ export class Segmenter {
                 else this.setCursor("pointer");
             }.bind(this);
             line.maskPath.onMouseLeave = function (_event) {
-                this.setCursor();
+                if (!this.newUiEnabled) this.setCursor();
             }.bind(this);
             line.maskPath.onMouseDrag = function (event) {
                 if (
@@ -1802,6 +1891,188 @@ export class Segmenter {
                 }
             }.bind(this);
         }
+    }
+
+    /** New UI: the path a line or region is edited by in this mode. */
+    modePath(item) {
+        if (item instanceof SegmenterRegion) return item.polygonPath;
+        return this.mode === "masks" ? item.maskPath : item.baselinePath;
+    }
+
+    /** New UI: the line or region a path belongs to. */
+    ownerOfPath(path) {
+        return (
+            this.lines.find((l) => l.baselinePath === path || l.maskPath === path) ||
+            this.regions.find((r) => r.polygonPath === path) ||
+            null
+        );
+    }
+
+    isPointSelected(segment) {
+        return this.selection.segments.some(
+            (s) => s.path && s.path === segment.path && s.index === segment.index,
+        );
+    }
+
+    /** New UI: unpicks every point, or those of `item`'s paths. */
+    clearPoints(item = null) {
+        const paths = item
+            ? [item.baselinePath, item.maskPath, item.polygonPath].filter(Boolean)
+            : null;
+        for (let i = this.selection.segments.length - 1; i >= 0; i--) {
+            const segment = this.selection.segments[i];
+            if (!segment.path) this.selection.segments.splice(i, 1);
+            else if (!paths || paths.includes(segment.path)) this.removeFromSelection(segment);
+        }
+    }
+
+    /**
+     * New UI press on a line or region: its points. On a selected item a click
+     * on a point picks just that one and Shift-click adds or removes it (the
+     * item stays selected); a drag from a picked point moves every picked point.
+     * Shift-drag from an item draws a selection box, as from the empty page.
+     * Returns false for the item's usual press (select it, drag the point
+     * nearest).
+     */
+    pressPoints(item, event) {
+        const path = this.modePath(item);
+        if (!path) return false;
+        const ratio = this.getRatio();
+        const hit = path.hitTest(event.point, {
+            segments: true,
+            tolerance: HANDLE_TOLERANCE / ratio,
+        });
+        const segment = hit && hit.type === "segment" ? hit.segment : null;
+        const wasSelected = item.selected;
+        const notify = () =>
+            this.trigger("baseline-editor:selection", { target: item, selection: this.selection });
+
+        if (event.event.shiftKey) {
+            if (segment && wasSelected) {
+                if (this.isPointSelected(segment)) this.removeFromSelection(segment);
+                else this.addToSelection(segment);
+                // `selecting` stays set until mouseup: the tool's own press
+                // (box selection with Shift) must not start
+                this.tool.onMouseDrag = null;
+                this.tool.onMouseUp = function () {
+                    this.selecting = null;
+                    this.resetToolEvents();
+                    notify();
+                }.bind(this);
+                return true;
+            }
+            // a Shift-click toggles the item (on mouseup); a Shift-drag boxes
+            const start = event;
+            this.tool.onMouseDrag = function (dragEvent) {
+                if (dragEvent.point.getDistance(start.point) * ratio < 4) return;
+                this.selecting = null;
+                this.tool.onMouseUp = null;
+                this.startLassoSelection(start);
+                this.tool.onMouseDrag(dragEvent);
+            }.bind(this);
+            this.tool.onMouseUp = function (upEvent) {
+                this.onMouseUp(upEvent);
+                this.resetToolEvents();
+            }.bind(this);
+            return true;
+        }
+
+        if (!segment) {
+            // pressing the item elsewhere drops its picked points
+            this.clearPoints();
+            // a region's border resizes it (bindRegionEvents)
+            if (item instanceof SegmenterRegion && this.regionEdgeAt(item, event.point)) {
+                return false;
+            }
+            // the edge of a selected line or mask: the pen adds a point there
+            const location =
+                wasSelected &&
+                !(item instanceof SegmenterRegion) &&
+                this.edgeLocation(path, event.point);
+            if (location) return this.pressEdge(item, path, location, notify);
+            // elsewhere on the item a click selects it; a drag moves nothing
+            this.tool.onMouseDrag = null;
+            this.tool.onMouseUp = function (upEvent) {
+                this.onMouseUp(upEvent);
+                this.resetToolEvents();
+            }.bind(this);
+            return true;
+        }
+        if (!this.isPointSelected(segment)) {
+            this.clearPoints();
+            this.addToSelection(segment);
+        }
+        let moved = false;
+        this.tool.onMouseDrag = function (dragEvent) {
+            moved = true;
+            this.selection.segments.forEach((s) => {
+                if (s.path) this.movePointInView(s.point, dragEvent.delta);
+            });
+            this.pointOwners().forEach((owner) => owner.refresh());
+            this.canvas.style.cursor = MOVE_POINT_CURSOR;
+        }.bind(this);
+        this.tool.onMouseUp = function (upEvent) {
+            this.resetToolEvents();
+            if (moved) this.pointOwners().forEach((owner) => owner.updateDataFromCanvas());
+            if (moved && wasSelected) {
+                // the points moved: their lines or regions stay selected
+                this.selecting = null;
+                notify();
+            } else {
+                // a click (or a drag on an item not yet selected) picks just
+                // this point and selects just its item
+                this.clearPoints();
+                this.onMouseUp(upEvent);
+                this.addToSelection(segment);
+            }
+            this.setCursor();
+        }.bind(this);
+        return true;
+    }
+
+    /** New UI: the spot on `path` within grab reach of `point`, if any. */
+    edgeLocation(path, point) {
+        const location = path.getNearestLocation(point);
+        const reach = HIT_TOLERANCE / this.getRatio();
+        return location && location.point.getDistance(point) <= reach ? location : null;
+    }
+
+    /**
+     * New UI press with the pen, on the edge of a selected line or mask: a
+     * click adds a point there, a drag adds it and moves it along.
+     */
+    pressEdge(item, path, location, notify) {
+        let added = null;
+        const add = () => {
+            added = path.insert(location.index + 1, location.point);
+            this.clearPoints();
+            this.addToSelection(added);
+        };
+        this.tool.onMouseDrag = function (dragEvent) {
+            if (!added) add();
+            this.movePointInView(added.point, dragEvent.delta);
+            item.refresh();
+            this.canvas.style.cursor = MOVE_POINT_CURSOR;
+        }.bind(this);
+        this.tool.onMouseUp = function () {
+            this.resetToolEvents();
+            if (!added) add();
+            this.selecting = null;
+            item.updateDataFromCanvas();
+            notify();
+            this.setCursor();
+        }.bind(this);
+        return true;
+    }
+
+    /** New UI: the lines and regions the picked points belong to. */
+    pointOwners() {
+        const owners = new Set();
+        this.selection.segments.forEach((s) => {
+            const owner = s.path && this.ownerOfPath(s.path);
+            if (owner) owners.add(owner);
+        });
+        return [...owners];
     }
 
     resetToolEvents() {
@@ -1825,8 +2096,143 @@ export class Segmenter {
         }.bind(this);
     }
 
+    /** A drag that moves the selection: Ctrl, and in the new UI Alt (Option). */
+    isMoveDrag(event) {
+        return event.ctrlKey || (this.newUiEnabled && event.altKey);
+    }
+
+    /**
+     * New UI: the line or region under `point`, selected or not; with
+     * `selectedFirst`, the selection wins over what lies on top of it (as clicks
+     * do).
+     */
+    selectableAt(point, selectedFirst = false) {
+        const options = {
+            fill: true,
+            stroke: true,
+            tolerance: HIT_TOLERANCE / this.getRatio(),
+        };
+        const hit =
+            (selectedFirst && this.hitSelected(point, options)) ||
+            paper.project.hitTest(point, options);
+        if (!hit) return null;
+        if (this.mode === "regions") {
+            return this.regions.find((r) => r.polygonPath === hit.item && !r.locked) || null;
+        }
+        return (
+            this.lines.find(
+                (l) => l.baselinePath === hit.item || l.maskPath === hit.item,
+            ) || null
+        );
+    }
+
+    /**
+     * New UI cursor: what a press under the pointer would do, from the tool,
+     * the modifier keys (Alt moves the selection, Shift adds to it) and what's
+     * under the pointer. `mods` is the latest pointer or key event.
+     */
+    cursorFor(point, mods) {
+        if (this.isDrawing || this.splitting) return "crosshair";
+        if (this.activeTool === "pan") return "grab";
+        if (["cut", "add-lines", "add-regions"].includes(this.activeTool)) return "crosshair";
+        if (mods.altKey) {
+            return this.hasSelection() || this.selectableAt(point) ? "grab" : "default";
+        }
+        const target = this.selectableAt(point, !mods.shiftKey);
+        if (mods.shiftKey) return target ? "copy" : "crosshair";
+        if (!target) return "default";
+        if (!target.selected) return "pointer";
+        if (target instanceof SegmenterRegion) {
+            const cursor = this.regionCursorAt(target, point);
+            return cursor === "pointer" ? "default" : cursor;
+        }
+        const path = this.mode === "masks" ? target.maskPath : target.baselinePath;
+        if (!path) return "default";
+        const ratio = this.getRatio();
+        if (path.hitTest(point, { segments: true, tolerance: HANDLE_TOLERANCE / ratio })) {
+            return MOVE_POINT_CURSOR;
+        }
+        // near the edge (masks have no stroke for a stroke hit test)
+        if (this.edgeLocation(path, point)) return ADD_POINT_CURSOR;
+        return "default";
+    }
+
+    /** New UI: sets the cursor for the pointer's last position. */
+    refreshCursor(mods = this.lastPointer) {
+        if (!this.lastPointer || !paper.view) return;
+        const point = paper.view.getEventPoint(this.lastPointer);
+        this.canvas.style.cursor = this.cursorFor(point, mods);
+    }
+
+    /** New UI: the paths of the selection, as one moves them. */
+    selectedPaths() {
+        if (this.mode === "regions") {
+            return this.selection.regions.map((r) => r.polygonPath);
+        }
+        return this.selection.lines
+            .flatMap((l) => [l.baselinePath, l.maskPath])
+            .filter(Boolean);
+    }
+
+    /**
+     * New UI: a hit on the selection, for item mouse events, so a selected line
+     * or region keeps the clicks over it.
+     */
+    hitSelected(point, options) {
+        // the path that takes clicks in this mode: baselines in lines mode, masks
+        // in masks mode (each ignores clicks in the other), region outlines
+        const paths =
+            this.mode === "regions"
+                ? this.selection.regions.map((r) => r.polygonPath)
+                : this.selection.lines.map((l) =>
+                    this.mode === "masks" ? l.maskPath : l.baselinePath,
+                );
+        for (const path of paths) {
+            if (!path) continue;
+            let interactive = path.isInserted();
+            for (let item = path; interactive && item; item = item.parent) {
+                interactive = item.visible && !item.locked;
+            }
+            if (!interactive) continue;
+            const hit = path.hitTest(point, options);
+            if (hit) return hit;
+        }
+        return null;
+    }
+
+    /**
+     * New UI: moves the selected lines (baseline and mask together) or regions
+     * by `delta`, as rigid shapes: the move stops at the image's edges (a
+     * shape already past one can still move back in).
+     */
+    moveSelectionWhole(delta) {
+        const paths = this.selectedPaths();
+        if (!paths.length) return;
+        const bounds = paths
+            .slice(1)
+            .reduce((all, path) => all.unite(path.bounds), paths[0].bounds);
+        const maxX = this.img.naturalWidth / this.scale;
+        const maxY = this.img.naturalHeight / this.scale;
+        const clamp = (value, low, high) =>
+            Math.min(Math.max(value, Math.min(0, low)), Math.max(0, high));
+        const step = new Point(
+            clamp(delta.x, -bounds.left, maxX - bounds.right),
+            clamp(delta.y, -bounds.top, maxY - bounds.bottom),
+        );
+        paths.forEach((path) => path.translate(step));
+        if (this.mode === "regions") {
+            this.selection.regions.forEach((r) => r.refresh());
+        } else {
+            this.selection.lines.forEach((l) => l.refresh());
+        }
+    }
+
     multiMove(event) {
         var delta = event.delta;
+        if (this.newUiEnabled && event.event.altKey) {
+            this.moveSelectionWhole(delta);
+            return;
+        }
         if (["lines", "masks"].includes(this.mode)) {
             if (this.selection.segments.length) {
                 // if segments are selected, move those
@@ -1890,10 +2296,14 @@ export class Segmenter {
     }
 
     onMouseDrag(event) {
-        if (event.event.ctrlKey) {
+        if (this.isMoveDrag(event.event)) {
             this.multiMove(event);
+            if (this.newUiEnabled) {
+                this.canvas.style.cursor = event.event.altKey ? "grabbing" : MOVE_POINT_CURSOR;
+            }
             this.tool.onMouseUp = function (_event) {
                 this.resetToolEvents();
+                if (this.newUiEnabled) this.setCursor();
                 // TODO: Should moving masks also move lines??
                 if (["lines", "masks"].includes(this.mode)) {
                     for (let i in this.selection.lines) {
@@ -1911,11 +2321,25 @@ export class Segmenter {
     onMouseDown(event) {
         if (isRightClick(event.event)) return;
         if (!this.selecting) {
-            if (
+            if (this.newUiEnabled && event.event.altKey) {
+                // Alt-drag moves the selection; with none, the item under the pointer
+                if (!this.hasSelection() && this.activeTool !== "pan") {
+                    const target = this.selectableAt(event.point);
+                    if (target) {
+                        target.select();
+                        this.trigger("baseline-editor:selection", {
+                            target,
+                            selection: this.selection,
+                        });
+                    }
+                }
+                return;
+            } else if (
                 event.event.ctrlKey ||
                 (this.newUiEnabled && this.activeTool === "pan")
             ) {
                 // don't do any segmentation action if moving items or panning
+                if (this.newUiEnabled && this.activeTool === "pan") this.panCursorUntilUp();
                 return;
             } else if (this.splitting) {
                 this.startCuter(event);
@@ -1936,9 +2360,16 @@ export class Segmenter {
                 // normal mouse tool, click outside selection = deselect all,
                 // and dragging from there pans the stage
                 this.purgeSelection();
+                this.panCursorUntilUp();
                 this.startPan(event.event);
             }
         }
+    }
+
+    /** New UI: the closed hand while the page is dragged, until the button is up. */
+    panCursorUntilUp() {
+        this.canvas.style.cursor = "grabbing";
+        document.addEventListener("mouseup", () => this.setCursor(), { once: true });
     }
 
     onMouseUp(event) {
@@ -1946,7 +2377,7 @@ export class Segmenter {
             // selection
             if (event.event.shiftKey) {
                 this.selecting.toggleSelect();
-                this.startLassoSelection(event);
+                if (!this.newUiEnabled) this.startLassoSelection(event);
             } else {
                 this.selecting.select();
                 this.purgeSelection(this.selecting);
@@ -2220,6 +2651,21 @@ export class Segmenter {
             });
         }.bind(this);
 
+        if (this.newUiEnabled) {
+            // new UI: the box adds every line or region it touches to the selection
+            const before = new Set(
+                this.mode === "regions" ? this.selection.regions : this.selection.lines,
+            );
+            const picked = new Set();
+            this.tool.onMouseDrag = function (event) {
+                this.updateSelectionRectangle(clip, event);
+                this.lassoSelectWhole(clip, before, picked);
+            }.bind(this);
+            document.addEventListener("mouseup", finishSelection);
+            document.addEventListener("keyup", onCancel);
+            return;
+        }
+
         let allLines =
             (this.selection.lines.length && this.selection.lines) || this.lines;
         let allRegions =
@@ -2276,6 +2722,12 @@ export class Segmenter {
             return;
         }
 
+        if (this.newUiEnabled && paper.view) {
+            this.fitViewToPanel();
+            this.applyRegionMode();
+            return;
+        }
+
         var bounds = this.img.getBoundingClientRect();
         var boundsWidth = parseInt(bounds.width);
         var boundsHeight = parseInt(bounds.height);
@@ -2293,6 +2745,28 @@ export class Segmenter {
 
             this.applyRegionMode();
         }
+    }
+
+    /**
+     * New UI: the canvas covers the visible panel only (its clipping parent,
+     * where it sits at the top left) and the view matrix maps the image onto
+     * it, wherever the zoom has put the image. A canvas the size of the zoomed
+     * image grows to tens of megapixels at high zoom and is reallocated on every
+     * zoom step, which stalls the page (and can crash it on hidpi screens).
+     */
+    fitViewToPanel() {
+        const panel = this.canvas.parentElement.getBoundingClientRect();
+        const image = this.img.getBoundingClientRect();
+        const width = Math.round(panel.width);
+        const height = Math.round(panel.height);
+        if (paper.view.viewSize.width !== width || paper.view.viewSize.height !== height) {
+            paper.view.viewSize = new Size(width, height);
+        }
+        // project units are image pixels / this.scale
+        const zoom = (image.width / this.img.naturalWidth) * this.scale;
+        paper.view.matrix = new paper.Matrix(
+            zoom, 0, 0, zoom, image.left - panel.left, image.top - panel.top,
+        );
     }
 
     loadLine(line, region) {
@@ -2794,6 +3268,12 @@ export class Segmenter {
     }
 
     removeFromSelection(obj) {
+        if (
+            this.newUiEnabled &&
+            (obj instanceof SegmenterLine || obj instanceof SegmenterRegion)
+        ) {
+            this.clearPoints(obj);
+        }
         if (obj instanceof SegmenterLine) {
             this.selection.lines.splice(
                 this.selection.lines.findIndex((e) => e.id == obj.id),
@@ -2840,7 +3320,11 @@ export class Segmenter {
                 this.selection.segments.splice(i);
             } else if (
                 !except ||
-                except.baselinePath != this.selection.segments[i].path
+                (this.newUiEnabled
+                    ? ![except.baselinePath, except.maskPath, except.polygonPath].includes(
+                        this.selection.segments[i].path,
+                    )
+                    : except.baselinePath != this.selection.segments[i].path)
             ) {
                 if (this.mode === "masks") {
                     // also unselect paths if in new UI "mask" mode; this usually happens in
@@ -2906,6 +3390,48 @@ export class Segmenter {
                 }
             }
         }
+    }
+
+    /**
+     * New UI lasso: selects the lines (by baseline or mask) or regions the box
+     * touches; those it no longer touches go back to how they were (`before`).
+     * On the items selected before (`before`) it also picks the points inside
+     * the box; `picked` keeps those, to unpick the ones the box leaves.
+     */
+    lassoSelectWhole(clip, before, picked) {
+        const box = clip.bounds;
+        const touches = (path) =>
+            path &&
+            path.visible &&
+            box.intersects(path.bounds) &&
+            (path.isInside(box) || path.intersects(clip) || path.contains(box.center));
+        const items =
+            this.mode === "regions"
+                ? this.regions.filter((r) => !r.locked)
+                : this.lines;
+        items.forEach((item) => {
+            const hit =
+                this.mode === "regions"
+                    ? touches(item.polygonPath)
+                    : touches(item.baselinePath) || touches(item.maskPath);
+            if (hit) item.select();
+            else if (!before.has(item)) item.unselect();
+        });
+        before.forEach((item) => {
+            const path = item.selected && this.modePath(item);
+            if (!path) return;
+            path.segments.forEach((segment) => {
+                if (segment.point.isInside(box)) {
+                    if (!this.isPointSelected(segment)) {
+                        this.addToSelection(segment);
+                        picked.add(segment);
+                    }
+                } else if (picked.has(segment)) {
+                    this.removeFromSelection(segment);
+                    picked.delete(segment);
+                }
+            });
+        });
     }
 
     lassoSelectionRegions(clip, allRegions, tmpSelected) {
@@ -3403,13 +3929,15 @@ export class Segmenter {
     setCursor(style) {
         if (style && !(this.newUiEnabled && this.activeTool === "pan")) {
             this.canvas.style.cursor = style;
+        } else if (this.newUiEnabled && this.lastPointer) {
+            this.refreshCursor();
         } else if (this.newUiEnabled) {
             if (this.activeTool === "pan") {
                 this.canvas.style.cursor = "grab";
             } else if (this.activeTool === "cut") {
                 this.canvas.style.cursor = "crosshair";
             } else if (["add-lines", "add-regions"].includes(this.activeTool)) {
-                this.canvas.style.cursor = "copy";
+                this.canvas.style.cursor = this.newUiEnabled ? "crosshair" : "copy";
             } else {
                 this.canvas.style.cursor = "default";
             }

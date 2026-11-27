@@ -56,9 +56,23 @@ class OptionsTestCase(SimpleTestCase):
         self.assertIsNone(parts['architecture'])
 
     def test_server_settings_are_refused(self):
-        for key in ('device', 'batch_size', 'precision', 'num_workers'):
+        for key in ('device', 'precision', 'num_workers'):
             ok, serializer = validate({'extra': {key: 1}})
             self.assertFalse(ok, key)
+
+    @override_settings(KRAKEN_TRAINING_BATCH_SIZE_MAX=32)
+    def test_batch_size(self):
+        ok, serializer = validate({'batch_size': 8})
+        self.assertTrue(ok, serializer.errors)
+        self.assertEqual(split(serializer.validated_data)['batch_size'], 8)
+        # ketos's spelling, among the other settings
+        ok, serializer = validate({'extra': {'B': '16'}})
+        self.assertTrue(ok, serializer.errors)
+        self.assertEqual(serializer.validated_data['batch_size'], 16)
+        # up to the server's limit, recognition only
+        self.assertFalse(validate({'batch_size': 33})[0])
+        self.assertFalse(validate({'batch_size': 0})[0])
+        self.assertFalse(validate({'batch_size': 8}, job='segmentation')[0])
 
     def test_unknown_extra_is_refused(self):
         ok, _ = validate({'extra': {'not_a_setting': 1}})
@@ -150,6 +164,34 @@ class HooksTestCase(SimpleTestCase):
         hooks._wrap_trainer(trainer)(accelerator='cpu')
         trainer.assert_called_once_with(accelerator='cpu', max_epochs=12, min_epochs=2, freeze_backbone=300)
 
+    @override_settings(KRAKEN_TRAINING_BATCH_SIZE=1, KRAKEN_TRAINING_BATCH_SIZE_PPOCR=None,
+                       KRAKEN_TRAINING_BATCH_SIZE_VGSL=None)
+    def test_ppocr_keeps_its_own_batch_size(self):
+        # the general setting is for VGSL; PP-OCR falls back to kraken's default
+        self.assertEqual(tasks.recognition_batch_size('TorchVGSLModel'), 1)
+        self.assertEqual(tasks.recognition_batch_size(None), 1)
+        self.assertIsNone(tasks.recognition_batch_size('PPOCRv6Model'))
+        config_class = tasks.recognition_training_classes('PPOCRv6Model')[0]
+        self.assertEqual(config_class().batch_size, 64)
+        # trained from scratch with the PP-OCR architecture
+        self.run_with({'architecture': 'ppocrv6'})
+        self.assertIsNone(tasks.recognition_batch_size(None))
+        # its own setting still sizes it
+        with self.settings(KRAKEN_TRAINING_BATCH_SIZE_PPOCR=16):
+            self.assertEqual(tasks.recognition_batch_size('PPOCRv6Model'), 16)
+
+    def test_chosen_batch_size_wins(self):
+        self.run_with({'batch_size': 4})
+        self.assertEqual(tasks.recognition_batch_size('TorchVGSLModel'), 4)
+        self.assertEqual(tasks.recognition_batch_size('PPOCRv6Model'), 4)
+
+    def test_vgsl_trains_in_batches_of_eight(self):
+        # our settings' default, unless the variable sets another
+        self.assertEqual(tasks.recognition_batch_size('TorchVGSLModel'), 8)
+        self.assertEqual(tasks.recognition_batch_size(None), 8)
+        with self.settings(KRAKEN_TRAINING_BATCH_SIZE_VGSL=4):
+            self.assertEqual(tasks.recognition_batch_size(None), 4)
+
     def test_other_tasks_are_left_alone(self):
         class Other:
             name = 'core.tasks.transcribe'
@@ -174,6 +216,9 @@ class ApiTestCase(CoreFactoryTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json()['available'])
         self.assertIn('vgsl', response.json()['defaults']['recognition'])
+        self.assertEqual(response.json()['defaults']['recognition']['vgsl']['batch_size'], 8)
+        self.assertEqual(response.json()['defaults']['recognition']['ppocrv6']['batch_size'], 64)
+        self.assertGreaterEqual(response.json()['limits']['batch_size'], 8)
 
     def test_refused_options_create_nothing(self):
         response = self.client.post(self.url, {'model_name': 'm', 'options': {'epochs': 0}},

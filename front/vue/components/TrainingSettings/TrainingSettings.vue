@@ -73,7 +73,7 @@
             </fieldset>
 
             <fieldset class="escr-settings-group">
-                <legend>Learning rate</legend>
+                <legend>Optimization</legend>
                 <div class="escr-settings-grid">
                     <label class="escr-setting escr-setting--wide">
                         <span>Schedule</span>
@@ -118,6 +118,21 @@
                             min="0"
                             :placeholder="placeholder('warmup')"
                             :disabled="disabled"
+                        >
+                    </label>
+                    <label
+                        v-if="isRecognition"
+                        class="escr-setting"
+                    >
+                        <span>Batch size</span>
+                        <input
+                            v-model="fields.batch_size"
+                            type="number"
+                            min="1"
+                            :max="batchSizeLimit"
+                            :placeholder="placeholder('batch_size')"
+                            :disabled="disabled"
+                            :class="{ invalid: invalid.includes('batch_size') }"
                         >
                     </label>
                     <label
@@ -307,7 +322,7 @@ const FASTER = {
 // common learning rates, from fast to careful (fine-tuning)
 const LEARNING_RATES = ["1e-2", "5e-3", "1e-3", "5e-4", "3e-4", "2e-4", "1e-4", "5e-5", "1e-5"];
 const NUMBER_FIELDS = [
-    "epochs", "min_epochs", "lag", "lrate", "warmup", "freeze_backbone",
+    "epochs", "min_epochs", "lag", "lrate", "warmup", "freeze_backbone", "batch_size",
     "rop_patience", "rop_factor", "step_size", "gamma", "cos_t_max", "cos_min_lr",
 ];
 
@@ -367,6 +382,7 @@ export default {
                 cos_t_max: "",
                 cos_min_lr: "",
                 freeze_backbone: "",
+                batch_size: "",
                 architecture: "",
                 variant: "",
                 augment: false,
@@ -384,6 +400,12 @@ export default {
         },
         learningRates() {
             return LEARNING_RATES;
+        },
+        /**
+         * The largest batch size this server lets a training choose
+         */
+        batchSizeLimit() {
+            return this.info?.limits?.batch_size || null;
         },
         /**
          * Typed numbers that aren't numbers ("5e-", "abc")
@@ -434,6 +456,7 @@ export default {
             ]);
             if (f.stopEarly) usable.add("lag");
             if (this.isRecognition && this.hasBaseModel) usable.add("freeze_backbone");
+            if (this.isRecognition) usable.add("batch_size");
             NUMBER_FIELDS.forEach((key) => {
                 const value = Number(f[key]);
                 if (usable.has(key) && f[key] !== "" && f[key] !== null && Number.isFinite(value)) {
@@ -470,6 +493,9 @@ export default {
             const parts = [`Up to ${o.epochs} epochs`];
             if (o.quit === "early") {
                 parts.push(`stops after ${o.lag} without improvement`);
+            }
+            if (this.isRecognition && o.batch_size) {
+                parts.push(`in batches of ${o.batch_size} lines`);
             }
             let text = parts.join(", ") + ".";
             if (this.mode === "faster" && this.options.freeze_backbone) {

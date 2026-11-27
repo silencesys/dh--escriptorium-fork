@@ -7,9 +7,12 @@ default of the architecture being trained (PP-OCR, for one, has defaults of
 its own, such as a 1000 step warmup), so an empty set of options trains
 exactly like upstream does.
 
-Settings that size the job for the server (device, batch size, precision,
-threads, data loading) stay with the administrator and are refused here.
+Settings that size the job for the server (device, precision, threads, data
+loading) stay with the administrator and are refused here. The batch size of
+a recognition training may be chosen, up to the server's
+KRAKEN_TRAINING_BATCH_SIZE_MAX.
 """
+from django.conf import settings
 from rest_framework import serializers
 
 RECOGNITION = 'recognition'
@@ -42,6 +45,7 @@ KETOS_ALIASES = {
     'cos_max': 'cos_t_max',
     'N': 'epochs',
     'r': 'lrate',
+    'B': 'batch_size',
     'q': 'quit',
     'g': 'gamma',
     'pad': 'padding',
@@ -92,6 +96,7 @@ class TrainingOptionsSerializer(serializers.Serializer):
     augment = serializers.BooleanField(required=False)
     normalization = serializers.ChoiceField(required=False, choices=NORMALIZATIONS)
     # recognition only
+    batch_size = serializers.IntegerField(required=False, min_value=1)
     freeze_backbone = serializers.IntegerField(required=False, min_value=0, max_value=1_000_000)
     architecture = serializers.ChoiceField(required=False, choices=list(ARCHITECTURES))
     # any other field of kraken's configs, as {name: value}
@@ -125,10 +130,14 @@ class TrainingOptionsSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 {'min_epochs': 'Must not be more than the maximum number of epochs.'})
         if job != RECOGNITION:
-            for field in ('freeze_backbone', 'architecture'):
+            for field in ('batch_size', 'freeze_backbone', 'architecture'):
                 if field in data:
                     raise serializers.ValidationError(
                         {field: 'Only for recognition training.'})
+        limit = max_batch_size()
+        if data.get('batch_size', 0) > limit:
+            raise serializers.ValidationError(
+                {'batch_size': f'At most {limit} on this server.'})
         if data.get('freeze_backbone') and not has_base_model:
             raise serializers.ValidationError(
                 {'freeze_backbone': 'Only when fine-tuning a base model.'})
@@ -160,6 +169,11 @@ class TrainingOptionsSerializer(serializers.Serializer):
         if errors:
             raise serializers.ValidationError({'extra': errors})
         return cleaned
+
+def max_batch_size():
+    """The largest batch a training may ask for (server setting)."""
+    return getattr(settings, 'KRAKEN_TRAINING_BATCH_SIZE_MAX', 64)
+
 
 def coerce(value, default):
     """A value from the form ("10", "true", ...) as the type of the default."""
@@ -237,4 +251,5 @@ def split(options):
         'extra': extra,
         'trainer': trainer,
         'architecture': ARCHITECTURES.get(options.get('architecture')),
+        'batch_size': options.get('batch_size'),
     }

@@ -22,6 +22,44 @@ html:has(#main.escr-vue-enabled) {
 
     --drop-shadow: rgb(9 9 11 / 12%);
     --drag-overlay: rgb(9 9 11 / 30%);
+
+    /*
+     * Tags: the stock hues, evened out (OKLCH). Light row 0-15 at one
+     * lightness (L 0.885, C 0.085; yellow and lime a step lighter), dark text
+     * >= 11:1; strong row 16-30 at L 0.54, C 0.14, white text >= 4.8:1. The
+     * variant numbers stay, so every saved tag keeps its colour family.
+     */
+    --tag-0: #dfdedb;
+    --tag-1: #a4ebca;
+    --tag-2: #93ebec;
+    --tag-3: #9be6ff;
+    --tag-4: #b2e0fe;
+    --tag-5: #cbd8ff;
+    --tag-6: #d4d5fe;
+    --tag-7: #ebcbfe;
+    --tag-8: #fcc5f1;
+    --tag-9: #fec7db;
+    --tag-10: #fecac8;
+    --tag-11: #fecdb8;
+    --tag-12: #fed09c;
+    --tag-13: #eee89e;
+    --tag-14: #deeea6;
+    --tag-15: #bee7b0;
+    --tag-16: #038359;
+    --tag-17: #017f7f;
+    --tag-18: #0576af;
+    --tag-19: #2c6fbe;
+    --tag-20: #4769bf;
+    --tag-21: #5a64be;
+    --tag-22: #715cb8;
+    --tag-23: #994d97;
+    --tag-24: #ad456a;
+    --tag-25: #b24741;
+    --tag-26: #b04c27;
+    --tag-27: #9b5f02;
+    --tag-28: #866c02;
+    --tag-29: #627a03;
+    --tag-30: #408127;
 }
 
 /* ---------- light ---------- */

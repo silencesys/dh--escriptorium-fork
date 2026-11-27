@@ -31,6 +31,41 @@ below.
 
 Updating is `docker compose pull && docker compose up -d`.
 
+## CPU and memory caps
+
+`docker-compose.custom.yml` caps every service's CPUs and memory, so the
+stack can't take the whole server. Each cap has a default and is set in
+`.env` as `ESCR_<SERVICE>_CPUS` / `ESCR_<SERVICE>_MEM`:
+
+| Service | Variables | Default |
+|---|---|---|
+| web | `ESCR_WEB_*` | 2 CPUs, 2g |
+| channelserver | `ESCR_CHANNEL_*` | 1, 512m |
+| celery-main | `ESCR_MAIN_*` | 4, 6g |
+| celery-live | `ESCR_LIVE_*` | 1, 1g |
+| celery-low-priority | `ESCR_LOW_*` | 2, 3g |
+| celery-gpu (training) | `ESCR_GPU_*` | 4, 8g |
+| celery-intensive-inference | `ESCR_INFERENCE_*` | 2, 4g |
+| db | `ESCR_DB_*` | 2, 2g |
+| redis | `ESCR_REDIS_*` | 0.5, 512m |
+| nginx | `ESCR_NGINX_*` | 1, 256m |
+| flower | `ESCR_FLOWER_*` | 0.5, 256m |
+| mail | `ESCR_MAIL_*` | 0.25, 128m |
+
+Memory caps together (about 28g by default) should stay below the server's
+memory, with a few GB left for the system. CPU caps may add up to more than
+the server has: each only stops one service from taking every core.
+
+- A service over its memory cap has a process killed: for a worker, the task
+  it was running fails. Lower its concurrency with its memory
+  (`CELERY_MAIN_CONC`, `CELERY_LIVE_CONC`, `CELERY_LOW_CONC`, 10 each), or
+  give it more.
+- `celery-gpu` and `celery-intensive-inference` use their CPU cap as their
+  thread count too, so give them whole numbers. Training's 4g `/dev/shm`
+  counts against its memory.
+- `docker stats` shows each service's use against its cap; a new cap takes
+  effect with `docker compose up -d`.
+
 ## Training on a CPU
 
 Training runs in `celery-gpu`, on the CPU unless `KRAKEN_TRAINING_DEVICE`
@@ -38,8 +73,18 @@ says otherwise. Things that help there, all in `variables.env`:
 
 - `KRAKEN_TRAINING_LOAD_THREADS`: data loading workers (e.g. 4–8), so the
   CPU isn't waiting for images;
-- leave `OMP_NUM_THREADS` unset for `celery-gpu`: training then uses every
-  core (upstream limits it to 1 only for `celery-main`).
+- `ESCR_GPU_CPUS` in `.env` (see below): training's CPU cap, and its
+  thread count with it (`OMP_NUM_THREADS`; upstream limits it to 1 only for
+  `celery-main`). Give training most of the cores it can have. The data
+  loading workers share that cap: with 4 CPUs, 2 workers leave the rest to
+  the model;
+- batch size: VGSL recognition trains in batches of 8 here (our best
+  results; kraken's default is 1), whatever `KRAKEN_TRAINING_BATCH_SIZE`
+  says; `KRAKEN_TRAINING_BATCH_SIZE_VGSL` sizes it otherwise. PP-OCR ignores
+  the general setting too and keeps kraken's own batch of 64: its BatchNorm
+  layers, warmup and learning rate are made for that, and in batches of one
+  it learns far worse. Set `KRAKEN_TRAINING_BATCH_SIZE_PPOCR` only to size it
+  otherwise (e.g. 32 if 64 doesn't fit the memory cap).
 
 In the training page, "Faster" (the default on CPU servers) trains for
 fewer epochs and stops earlier; fine-tuning a base model trains only its last
