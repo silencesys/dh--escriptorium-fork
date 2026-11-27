@@ -49,7 +49,7 @@
                     :class="{ 'is-expired': item.is_expired }"
                 >
                     <td class="escr-exports-label">
-                        <span class="escr-exports-type">{{ shortMime(item.mime_type) }}</span>
+                        <span class="escr-exports-type">{{ fileType(item) }}</span>
                         <span class="escr-exports-name">{{ item.label }}</span>
                     </td>
                     <td class="escr-num">
@@ -262,8 +262,12 @@ export default {
             }
             return "now";
         },
-        shortMime(mime) {
-            return MIME_TYPES[mime] || (mime || "").split("/").pop().toUpperCase();
+        fileType(item) {
+            if (MIME_TYPES[item.mime_type]) return MIME_TYPES[item.mime_type];
+            // otherwise the file's extension, if it has a short one
+            const name = (item.file_url || "").split("?")[0].split("/").pop();
+            const extension = name.includes(".") ? name.split(".").pop() : "";
+            return extension && extension.length <= 6 ? extension.toUpperCase() : "FILE";
         },
     },
 };
