@@ -164,7 +164,7 @@ import EscrButton from "../Button/Button.vue";
 import EscrModal from "../Modal/Modal.vue";
 import SegmentedButtonGroup from "../SegmentedButtonGroup/SegmentedButtonGroup.vue";
 import TextField from "../TextField/TextField.vue";
-import XIcon from "../Icons/XIcon/XIcon.vue";
+import { XIcon } from "../Icons/Lucide/icons";
 import "../Common/Form.css";
 import "./AlignModal.css";
 

@@ -1,0 +1,220 @@
+/*
+ * The tag filter (vue/components/TagFilter, in the "Tags" menu beside a
+ * list's search): the language of the modals at popover size: a title,
+ * match all / any on a track, the tags as the chips of the tags field
+ * (custom/modals.css) with "Untagged" as an empty one, then the actions.
+ */
+html:has(#main.escr-vue-enabled) .escr-tag-filter.escr-modal {
+    position: static;
+    display: flex;
+    flex-flow: column;
+    gap: 12px;
+    box-sizing: border-box;
+    width: 320px;
+    max-width: calc(100vw - 32px);
+    margin: 0;
+    padding: 16px;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    filter: none;
+    color: var(--text1);
+    font-size: 13px;
+}
+html:has(#main.escr-vue-enabled) .escr-tag-filter > * {
+    margin: 0;
+}
+html:has(#main.escr-vue-enabled) .escr-tag-filter > h3 {
+    margin: 0 0 2px;
+    color: var(--text1);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+}
+/* match all / any */
+html:has(#main.escr-vue-enabled) .escr-tag-filter .escr-segmented-button-group {
+    gap: 2px;
+    padding: 2px;
+    border-radius: 8px;
+    background-color: var(--nav-hover);
+}
+html:has(#main.escr-vue-enabled) .escr-tag-filter .escr-segmented-button-group > div {
+    flex: 1 1 0;
+    height: 28px;
+    max-height: 28px;
+}
+html:has(#main.escr-vue-enabled) .escr-tag-filter .escr-segmented-button-group label {
+    width: 100%;
+    height: 28px;
+    min-height: 28px;
+    margin: 0;
+    padding: 0 10px;
+    border-radius: 6px !important;
+    font-size: 13px;
+}
+html:has(#main.escr-vue-enabled) .escr-tag-filter .escr-segmented-button-group input:not(:checked) + :is(label, div > label) {
+    background-color: transparent;
+    color: var(--text2);
+    font-weight: 500;
+}
+html:has(#main.escr-vue-enabled) .escr-tag-filter .escr-segmented-button-group input:not(:checked) + :is(label, div > label):hover {
+    background-color: transparent;
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) .escr-tag-filter .escr-segmented-button-group input:checked + :is(label, div > label) {
+    background-color: var(--background1);
+    color: var(--text1);
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 12%);
+}
+html:has(#main.escr-vue-enabled) .escr-tag-filter .escr-segmented-button-group input:focus-visible + :is(label, div > label) {
+    box-shadow: 0 0 0 2px var(--primary-focus);
+}
+/* "Tags", with select all / clear at the end of the line */
+html:has(#main.escr-vue-enabled) .escr-tag-filter > h4 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 4px 0 -4px;
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 16px;
+}
+html:has(#main.escr-vue-enabled) .escr-tag-filter > h4 > div {
+    display: flex;
+    gap: 2px;
+}
+html:has(#main.escr-vue-enabled) .escr-tag-filter > h4 .escr-button {
+    height: 24px;
+    min-height: 24px;
+    margin: 0;
+    padding: 0 6px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 500;
+    text-decoration: none;
+}
+html:has(#main.escr-vue-enabled) .escr-tag-filter > h4 .escr-button:hover:not(:disabled) {
+    background-color: var(--nav-hover);
+}
+html:has(#main.escr-vue-enabled) .escr-tag-filter > h4 .escr-button:disabled {
+    background: transparent;
+    color: var(--text3);
+    opacity: 1;
+}
+html:has(#main.escr-vue-enabled) .escr-tag-filter > h4 .escr-button:last-child {
+    margin-right: -6px;
+}
+/* find a tag: the popover's full width */
+html:has(#main.escr-vue-enabled) .escr-tag-filter .escr-text-field {
+    align-self: stretch;
+    width: 100%;
+    margin: 0;
+}
+html:has(#main.escr-vue-enabled) .escr-tag-filter .escr-text-field input {
+    box-sizing: border-box;
+    width: 100%;
+    height: 32px;
+    min-height: 32px;
+    margin: 0;
+    padding: 0 10px;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background-color: var(--background1);
+    color: var(--text1);
+    font-size: 13px;
+}
+html:has(#main.escr-vue-enabled) .escr-tag-filter .escr-text-field input:hover {
+    border-color: var(--background2-darker);
+}
+html:has(#main.escr-vue-enabled) .escr-tag-filter .escr-text-field input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-focus);
+    outline: none;
+}
+html:has(#main.escr-vue-enabled) .escr-tag-filter .escr-text-field input::placeholder {
+    color: var(--text3);
+}
+/* the tags: their chips are the tags field's */
+html:has(#main.escr-vue-enabled) .escr-tag-filter.escr-modal .escr-tag-filter-group {
+    display: flex;
+    flex-flow: row wrap;
+    gap: 6px;
+    max-height: 168px;
+    margin: -3px;
+    /* room for the chips' focus rings inside the scroll box */
+    padding: 3px;
+    overflow: auto;
+}
+html:has(#main.escr-vue-enabled) .escr-tag-filter .escr-tag-filter-group:empty {
+    display: none;
+}
+html:has(#main.escr-vue-enabled) .escr-tag-filter .escr-tag-filter-group .escr-tag {
+    margin: 0;
+}
+/* "+ 2 tags hidden, ..." */
+html:has(#main.escr-vue-enabled) .escr-tag-filter > div:not([class]) {
+    margin-top: -6px;
+    color: var(--text3);
+    font-size: 12px;
+    line-height: 16px;
+}
+/* "Untagged": one more tag, an empty one: dashed, no colour; picked, a
+   neutral fill and the tick */
+html:has(#main.escr-vue-enabled) .escr-tag-filter .escr-tag-filter-group input:not(:checked) + .escr-tag.escr-tag--untagged {
+    border-style: dashed;
+    border-color: var(--background2-darker);
+}
+html:has(#main.escr-vue-enabled) .escr-tag-filter .escr-tag-filter-group input + .escr-tag.escr-tag--untagged::before {
+    display: none;
+}
+html:has(#main.escr-vue-enabled) .escr-tag-filter .escr-tag-filter-group input:checked + .escr-tag.escr-tag--untagged {
+    background-color: var(--background2);
+    border-color: var(--text3);
+    color: var(--text1);
+}
+/* actions, at least 1.5rem below the tags (the popover's 12px gap + this) */
+html:has(#main.escr-vue-enabled) .escr-tag-filter > .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin: calc(1.5rem - 12px) 0 0;
+    padding: 0;
+}
+html:has(#main.escr-vue-enabled) .escr-tag-filter > .modal-actions .escr-button {
+    height: 32px;
+    min-height: 32px;
+    margin: 0;
+    padding: 0 14px;
+    font-size: 13px;
+}
+html:has(#main.escr-vue-enabled) .escr-tag-filter .escr-button--outline-primary {
+    border: 1px solid var(--divider);
+    background-color: var(--background1);
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) .escr-tag-filter .escr-button--outline-primary:hover:not(:disabled) {
+    border-color: var(--background2-darker);
+    background-color: var(--background1);
+    color: var(--text1);
+}
+/* its surface: the menus' (custom/menus.css), without the arrow */
+html:has(#main.escr-vue-enabled) .v-popper__popper:has(.escr-tag-filter) .v-popper__inner {
+    padding: 0 !important;
+    overflow: visible;
+    border: 1px solid var(--divider) !important;
+    border-radius: 12px !important;
+    background: var(--background1) !important;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 6%), 0 8px 24px rgb(0 0 0 / 12%) !important;
+}
+html.dark-mode:has(#main.escr-vue-enabled) .v-popper__popper:has(.escr-tag-filter) .v-popper__inner {
+    box-shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 8px 24px rgb(0 0 0 / 45%) !important;
+}
+html:has(#main.escr-vue-enabled) .v-popper__popper:has(.escr-tag-filter) :is(.v-popper__arrow-inner, .v-popper__arrow-outer) {
+    display: none;
+}

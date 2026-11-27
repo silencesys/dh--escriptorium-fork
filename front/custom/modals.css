@@ -1,0 +1,1029 @@
+/*
+ * Modals (vue/components/Modal: EscrModal and everything built on it).
+ *
+ * One system instead of each modal placing and sizing itself:
+ * - centred in the viewport, in one of four widths: --modal-sm for a
+ *   question (confirmations), --modal-md for a form (the default), --modal-lg
+ *   for a list or a richer form, --modal-xl for the ontology editor;
+ * - header, content and actions on the same 24px inset, the title at 17px,
+ *   the controls on the compact 32px scale of the rest of the UI;
+ * - content shows its dropdown menus whole: only the modals whose content
+ *   can outgrow the viewport (`MODAL_SCROLLS` below) scroll it, the others
+ *   leave it unclipped.
+ *
+ * The editor's line transcription modal (#trans-modal) is a different
+ * component and keeps its own width; the tag filter popover only borrows the
+ * class name. Both are left out by matching .escr-modal-backdrop > .escr-modal.
+ */
+html:has(#main.escr-vue-enabled) {
+    --modal-sm: 440px;
+    --modal-md: 520px;
+    --modal-lg: 720px;
+    --modal-xl: 1080px;
+    --modal-inset: 24px;
+}
+
+/* ---- the box ---- */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal {
+    display: flex;
+    flex-flow: column;
+    box-sizing: border-box;
+    width: var(--modal-width, var(--modal-md));
+    min-width: 0;
+    max-width: calc(100vw - 32px);
+    height: fit-content;
+    max-height: calc(100vh - 48px);
+    /* centred both ways, without a transform (a nested modal's backdrop
+       must stay fixed to the viewport) */
+    inset: 0;
+    margin: auto;
+    padding: 0;
+    overflow: visible;
+    border: 1px solid var(--divider);
+    border-radius: 14px;
+    background-color: var(--background1);
+    color: var(--text1);
+    filter: none;
+    box-shadow: 0 24px 48px rgb(9 9 11 / 16%), 0 2px 6px rgb(9 9 11 / 8%);
+    font-size: 14px;
+}
+html.dark-mode:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal {
+    box-shadow: 0 24px 48px rgb(0 0 0 / 50%), 0 2px 6px rgb(0 0 0 / 40%);
+}
+
+/* widths */
+html:has(#main.escr-vue-enabled) :is(
+    .escr-confirm-modal,
+    .escr-delete-project,
+    .escr-add-component
+) > .escr-modal {
+    --modal-width: var(--modal-sm);
+}
+html:has(#main.escr-vue-enabled) :is(
+    .escr-import-modal,
+    .escr-transcription-management
+) > .escr-modal {
+    --modal-width: var(--modal-lg);
+}
+html:has(#main.escr-vue-enabled) .escr-edit-ontology > .escr-modal {
+    --modal-width: var(--modal-xl);
+}
+
+/* ---- header: the title, and the close button at the end ---- */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal > .escr-modal-header {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0;
+    padding: 18px 16px 0 var(--modal-inset);
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal > .escr-modal-header h2 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 32px;
+    margin: 0;
+    color: var(--text1);
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 24px;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal > .escr-modal-header > .escr-button {
+    flex: none;
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    min-height: 32px;
+    margin-left: auto;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background-color: transparent;
+    color: var(--text2);
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal > .escr-modal-header > .escr-button:hover {
+    background-color: var(--nav-hover);
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal > .escr-modal-header > .escr-button svg {
+    width: 16px;
+    height: 16px;
+}
+/* a header without a title row of its own (some put their description in it) */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal > .escr-modal-header:empty {
+    display: none;
+}
+
+/* ---- content: one column, 16px between its blocks, whatever they are ---- */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal > .escr-modal-content {
+    display: flex;
+    flex: 1 1 auto;
+    flex-flow: column;
+    gap: 16px;
+    min-height: 0;
+    padding: 16px var(--modal-inset) 4px;
+    overflow: visible;
+    color: var(--text1);
+    font-size: 14px;
+    line-height: 20px;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal > .escr-modal-content > * {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+/* MODAL_SCROLLS: content that can outgrow the viewport scrolls inside the
+   box, between the fixed header and actions */
+html:has(#main.escr-vue-enabled) :is(
+    .escr-edit-document,
+    .escr-align-modal,
+    .escr-element-details,
+    .escr-edit-ontology,
+    .escr-import-modal,
+    .escr-transcription-management
+) > .escr-modal > .escr-modal-content {
+    overflow-y: auto;
+    scrollbar-width: thin;
+    /* the scrollbar's gutter comes off the right padding, so the fields end
+       on the line of the header and the actions (custom/scrollbars.js) */
+    scrollbar-gutter: stable;
+    padding-right: max(0px, calc(var(--modal-inset) - var(--escr-scrollbar-thin, 0px)));
+    overflow-x: hidden;
+}
+/* intro text */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal > .escr-modal-content > p {
+    color: var(--text2);
+    font-size: 13px;
+}
+/* sections of a longer form: a hairline, then a heading */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal > .escr-modal-content > hr {
+    width: 100%;
+    margin: 4px 0;
+    border: none;
+    border-top: 1px solid var(--divider);
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-modal-content :is(h3.escr-align-settings, div > h3, h4) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0;
+    color: var(--text1);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 20px;
+}
+/* ---- actions: the main one last, on the right ---- */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal > .modal-actions {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    margin: 0;
+    padding: 20px var(--modal-inset) var(--modal-inset);
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal > .modal-actions .escr-button {
+    min-height: 32px;
+    height: 32px;
+    margin: 0;
+    padding: 0 14px;
+    font-size: 13px;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal > .modal-actions button + button {
+    margin-left: 0;
+}
+/* outlined accent buttons (Cancel, Select all, ...) are neutral here, so
+   the main action is the only coloured one */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-button--outline-primary {
+    border: 1px solid var(--divider);
+    background-color: var(--background1);
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-button--outline-primary:hover:not(:disabled) {
+    border-color: var(--background2-darker);
+    background-color: var(--background1);
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-button--outline-primary svg {
+    fill: currentColor;
+}
+
+/* ---- confirmations: the icon beside the title, the text under it ---- */
+html:has(#main.escr-vue-enabled) .escr-confirm-modal > .escr-modal > .escr-modal-header h2 svg {
+    flex: none;
+    width: 20px;
+    height: 20px;
+}
+html:has(#main.escr-vue-enabled) .escr-confirm-modal > .escr-modal > .escr-modal-content {
+    padding-left: calc(var(--modal-inset) + 32px);
+}
+html:has(#main.escr-vue-enabled) .escr-confirm-modal > .escr-modal > .escr-modal-content h3 {
+    margin-bottom: 4px;
+    color: var(--text1);
+    font-weight: 400;
+}
+html:has(#main.escr-vue-enabled) .escr-confirm-modal > .escr-modal > .escr-modal-content p {
+    margin: 0;
+    color: var(--text2);
+    font-size: 13px;
+}
+
+/* ---- fields: a label 6px above its control ---- */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-form-field {
+    margin: 0;
+}
+/* labels: small and muted, the value is what matters (some modals label a
+   field with an h3 of the content: the same look, 6px above it) */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal :is(
+    .escr-field-label,
+    .escr-form-label,
+    .escr-form-field > label:not(:has(input[type="checkbox"], input[type="radio"], select, .escr-dropdown, .escr-autocomplete-dropdown)),
+    .escr-modal-content > h3:not(.escr-align-settings)
+) {
+    display: block;
+    margin: 0 0 6px;
+    padding: 0;
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 16px;
+}
+html:has(#main.escr-vue-enabled) .escr-confirm-modal > .escr-modal .escr-modal-content > h3 {
+    margin: 0;
+    color: var(--text1);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 20px;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-modal-content > h3:not(.escr-align-settings) {
+    /* 6px to its control, which is the next block (16px away) */
+    margin-bottom: -10px !important;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-required {
+    font-size: 12px;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-help-text {
+    display: block;
+    margin-top: 6px;
+    color: var(--text3);
+    font-size: 12px;
+    font-style: normal;
+    line-height: 16px;
+}
+/* a field made of fields (a choice, then the control for it) */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-form-field .escr-form-field {
+    margin-top: 6px;
+}
+
+/* facts (label, value) in two columns */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal dl {
+    display: grid;
+    grid-template-columns: 120px minmax(0, 1fr);
+    gap: 8px 16px;
+    margin: 0;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal dl :is(dt, dd) {
+    margin: 0;
+    line-height: 20px;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal dl dt {
+    margin: 0;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal dl dd {
+    color: var(--text1);
+    font-size: 13px;
+}
+
+/* a plain select in a field: the same control as the others */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-form-field:has(> select) {
+    display: flex;
+    flex-flow: column;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-form-field > select {
+    box-sizing: border-box;
+    width: 100%;
+    height: 32px;
+    margin: 0;
+    padding: 0 30px 0 10px;
+    appearance: none;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background: var(--background1) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 7px center;
+    color: var(--text1);
+    font-size: 13px;
+}
+
+/* controls on the compact scale: hairline, 32px, 13px */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal :is(
+    .escr-dropdown select,
+    .escr-autocomplete-dropdown input,
+    .escr-text-field input,
+    .escr-multiselect-trigger,
+    .metadatum input,
+    input[type="number"],
+    input[type="url"]
+) {
+    box-sizing: border-box;
+    height: 32px;
+    min-height: 32px;
+    margin: 0;
+    padding: 0 10px;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background-color: var(--background1);
+    color: var(--text1);
+    font-size: 13px;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal :is(
+    .escr-dropdown select,
+    .escr-autocomplete-dropdown input,
+    .escr-multiselect-trigger
+) {
+    padding-right: 30px;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-multiselect-trigger {
+    display: flex;
+    align-items: center;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal textarea {
+    box-sizing: border-box;
+    min-height: 76px;
+    margin: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background-color: var(--background1);
+    color: var(--text1);
+    font-size: 13px;
+    line-height: 20px;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal :is(input:not([type="checkbox"], [type="radio"]), select, textarea, .escr-multiselect-trigger):not(:disabled):hover {
+    border-color: var(--background2-darker);
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal :is(input:not([type="checkbox"], [type="radio"]), select, textarea):focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-focus);
+    outline: none;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal :is(input, textarea)::placeholder {
+    color: var(--text3);
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal :is(input:not([type="checkbox"], [type="radio"]), select, textarea):disabled {
+    background-color: var(--background2);
+    color: var(--text3);
+}
+/* one chevron for every kind of select: Lucide's at 18px (drawn 9px wide),
+   centred, ending 12px in */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal :is(.escr-dropdown, .escr-autocomplete-dropdown) .escr-chevron-down-icon,
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-multiselect-trigger svg {
+    position: absolute;
+    top: 50%;
+    right: 7px;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    transform: translateY(-50%);
+    color: var(--text2);
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-multiselect-trigger--open svg {
+    transform: translateY(-50%) rotate(180deg);
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-multiselect-trigger {
+    position: relative;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-multiselect-trigger--open {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 3px var(--primary-focus);
+}
+
+/* checkbox rows: the box, then the label in body text */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal label:has(> input[type="checkbox"]) {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: var(--text1);
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 20px;
+    cursor: pointer;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-checkbox-field {
+    display: flex;
+    flex-flow: column;
+    align-items: flex-start;
+    gap: 6px;
+}
+/* a long list of choices: two columns, items on one grid */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-checkbox-field.escr-region-types {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 16px;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-checkbox-field.escr-region-types > label:has(> input) {
+    min-width: 0;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-checkbox-field.escr-region-types > :not(label:has(> input)) {
+    grid-column: 1 / -1;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-checkbox-field > :is(.escr-field-label, .escr-form-label) {
+    flex-basis: 100%;
+    margin: 0;
+}
+
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-checkbox-field input {
+    flex: none;
+    margin: 0;
+}
+/* a checkbox's help sits under its label's text (box 16px + gap 8px),
+   whatever indent the modal's own stylesheet gave it */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal label:has(> input[type="checkbox"]) + .escr-help-text {
+    margin: 2px 0 0 24px;
+    padding: 0;
+    font-style: normal;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-checkbox-field > label:has(> input[type="checkbox"]) + .escr-help-text {
+    margin-top: -4px;
+}
+
+/* the "Select all / Clear" pair of the multiple choice field */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-multiselect-action-btn {
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background-color: var(--background1);
+    color: var(--text1);
+    font-size: 13px;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-multiselect-action-btn:hover:not(:disabled) {
+    border-color: var(--background2-darker);
+    background-color: var(--background1);
+    color: var(--text1);
+}
+
+/* actions inside a field (add metadata, ...): on the 32px line of the controls */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-metadata-field > .escr-button {
+    height: 32px;
+    min-height: 32px;
+    padding: 0 10px;
+    font-size: 13px;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-metadata-field .metadatum {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 6px;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-metadata-field .metadatum .escr-button {
+    width: 32px;
+    min-width: 32px;
+    height: 32px;
+    padding: 0;
+}
+
+/* "Add new" metadata: a secondary action of the form, not its main one */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-metadata-field > .escr-button--primary {
+    border: 1px solid var(--divider);
+    background-color: var(--background1);
+    color: var(--text1);
+    fill: var(--text1);
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-metadata-field > .escr-button--primary:hover {
+    border-color: var(--background2-darker);
+}
+
+
+/* segmented choices: the track of the rest of the UI */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-segmented-button-group {
+    display: flex;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 8px;
+    background-color: var(--nav-hover);
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-segmented-button-group > div {
+    flex: 1 1 0;
+    height: 28px;
+    max-height: 28px;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-segmented-button-group > div label {
+    width: 100%;
+    min-height: 28px;
+    height: 28px;
+    margin: 0;
+    padding: 0 10px;
+    border-radius: 6px;
+    font-size: 13px;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-segmented-button-group input:not(:checked) + :is(label, div > label) {
+    background-color: transparent;
+    color: var(--text2);
+    font-weight: 500;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-segmented-button-group input:not(:checked) + :is(label, div > label):hover {
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-segmented-button-group input:checked + :is(label, div > label) {
+    background-color: var(--background1);
+    color: var(--text1);
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 12%);
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-segmented-button-group input:focus-visible + :is(label, div > label) {
+    box-shadow: 0 0 0 2px var(--primary-focus);
+}
+
+/* ---- tags: the search with "Create a tag" beside it (Enter creates too),
+   then the tags to pick from ---- */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-tags-field {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: flex-start;
+    gap: 8px;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-tags-field > .escr-form-label {
+    flex-basis: 100%;
+    margin: 0 0 -2px;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-tags-field > .escr-text-field {
+    flex: 1 1 200px;
+    min-width: 0;
+    margin: 0;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-tags-field > .escr-text-field input {
+    width: 100%;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-create-tag {
+    display: flex;
+    flex: none;
+    max-width: 50%;
+    margin: 0;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-create-tag > * {
+    display: flex;
+    min-width: 0;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-create-tag .escr-button {
+    max-width: 100%;
+    height: 32px;
+    min-height: 32px;
+    margin: 0;
+    padding: 0 12px 0 10px;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background-color: var(--background1);
+    color: var(--text1);
+    font-size: 13px;
+    white-space: nowrap;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-create-tag .escr-button > span {
+    overflow: hidden;
+    line-height: 20px;
+    text-overflow: ellipsis;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-create-tag .escr-button:hover:not(:disabled) {
+    border-color: var(--background2-darker);
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-create-tag .escr-button:disabled {
+    color: var(--text3);
+    opacity: 1;
+}
+
+html:has(#main.escr-vue-enabled) :is(.escr-modal-backdrop > .escr-modal .escr-tag-field-group, .escr-tag-filter .escr-tag-filter-group) {
+    display: flex;
+    flex: 1 1 100%;
+    flex-flow: row wrap;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    border: none;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-tag-field-group:empty {
+    display: none;
+}
+/* a tag to pick (here and in the tag filter, custom/filters.css): selected
+   ones are filled with their colour and ticked, the others are outlined,
+   their colour only as a dot */
+html:has(#main.escr-vue-enabled) :is(.escr-modal-backdrop > .escr-modal .escr-tag-field-group, .escr-tag-filter .escr-tag-filter-group) .escr-tag {
+    gap: 6px;
+    height: 26px;
+    margin: 0;
+    padding: 0 10px;
+    border: 1px solid transparent;
+    font-size: 12px;
+    /* one weight, picked or not: picking a tag must not reflow the row */
+    font-weight: 500;
+    line-height: 16px;
+}
+html:has(#main.escr-vue-enabled) :is(.escr-modal-backdrop > .escr-modal .escr-tag-field-group, .escr-tag-filter .escr-tag-filter-group) input:not(:checked) + .escr-tag {
+    border-color: var(--divider);
+    color: var(--text2);
+    box-shadow: inset 0 0 0 26px var(--background1);
+}
+html:has(#main.escr-vue-enabled) :is(.escr-modal-backdrop > .escr-modal .escr-tag-field-group, .escr-tag-filter .escr-tag-filter-group) input:not(:checked) + .escr-tag::before {
+    content: "";
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: inherit;
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 15%);
+}
+html:has(#main.escr-vue-enabled) :is(.escr-modal-backdrop > .escr-modal .escr-tag-field-group, .escr-tag-filter .escr-tag-filter-group) input:not(:checked) + .escr-tag:hover {
+    border-color: var(--background2-darker);
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) :is(.escr-modal-backdrop > .escr-modal .escr-tag-field-group, .escr-tag-filter .escr-tag-filter-group) input:checked + .escr-tag {
+    border-color: transparent;
+}
+html:has(#main.escr-vue-enabled) :is(.escr-modal-backdrop > .escr-modal .escr-tag-field-group, .escr-tag-filter .escr-tag-filter-group) input:checked + .escr-tag svg {
+    flex: none;
+    width: 12px;
+    height: 12px;
+    /* 14px with the gap, as the dot it replaces: picking keeps the width */
+    margin: 0 -2px;
+    stroke-width: 2.25;
+}
+html:has(#main.escr-vue-enabled) :is(.escr-modal-backdrop > .escr-modal .escr-tag-field-group, .escr-tag-filter .escr-tag-filter-group) input:focus-visible + .escr-tag {
+    box-shadow: 0 0 0 3px var(--primary-focus);
+}
+html:has(#main.escr-vue-enabled) :is(.escr-modal-backdrop > .escr-modal .escr-tag-field-group, .escr-tag-filter .escr-tag-filter-group) input:not(:checked):focus-visible + .escr-tag {
+    box-shadow: inset 0 0 0 26px var(--background1), 0 0 0 3px var(--primary-focus);
+}
+html:has(#main.escr-vue-enabled) :is(.escr-modal-backdrop > .escr-modal .escr-tag-field-group, .escr-tag-filter .escr-tag-filter-group) input:focus:not(:focus-visible) + .escr-tag:not(:hover) {
+    outline: none;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-tags-field > .escr-help-text {
+    flex-basis: 100%;
+    margin: 0;
+}
+/* "+ 2 tags hidden, ..." under them */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-tags-field > div:not([class]) {
+    flex-basis: 100%;
+    color: var(--text3);
+    font-size: 12px;
+    line-height: 16px;
+}
+
+/* ---- notes in a modal (e.g. "Check the segmentation first"): a quiet
+   tinted line, the icon at text size ---- */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 18px;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-alert svg {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin: 1px 0 0;
+    color: inherit;
+}
+
+/* ---- tables in a modal: full width, compact rows ---- */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-modal-content .escr-table {
+    width: 100%;
+    max-width: none;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-modal-content .escr-table tbody tr {
+    height: 44px;
+    font-size: 13px;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-modal-content .escr-table thead tr {
+    color: var(--text2);
+}
+/* (the header's line on its group: a column without a heading still gets it) */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-modal-content .escr-table thead {
+    border-bottom: 1px solid var(--divider);
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-modal-content .escr-table thead tr {
+    border-bottom: none;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-modal-content .escr-table tbody tr {
+    border-bottom: 1px solid var(--divider);
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-modal-content .escr-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+
+/* ---- ontology: the default and the custom types side by side, each
+   under its heading; the annotation tabs keep their one wide table ---- */
+html:has(#main.escr-vue-enabled) .escr-edit-ontology > .escr-modal > .escr-modal-content:not(:has(> h3.anno-header)) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto auto 1fr;
+    align-items: start;
+    gap: 0 32px;
+}
+html:has(#main.escr-vue-enabled) .escr-edit-ontology > .escr-modal > .escr-modal-content:not(:has(> h3.anno-header)) > :nth-child(1) {
+    grid-column: 1 / -1;
+    margin-bottom: 20px;
+}
+html:has(#main.escr-vue-enabled) .escr-edit-ontology > .escr-modal > .escr-modal-content:not(:has(> h3.anno-header)) > :nth-child(2) { grid-area: 2 / 1; }
+html:has(#main.escr-vue-enabled) .escr-edit-ontology > .escr-modal > .escr-modal-content:not(:has(> h3.anno-header)) > :nth-child(3) { grid-area: 3 / 1; }
+html:has(#main.escr-vue-enabled) .escr-edit-ontology > .escr-modal > .escr-modal-content:not(:has(> h3.anno-header)) > :nth-child(4) { grid-area: 2 / 2; }
+html:has(#main.escr-vue-enabled) .escr-edit-ontology > .escr-modal > .escr-modal-content:not(:has(> h3.anno-header)) > :nth-child(5) { grid-area: 3 / 2; }
+/* (the :not() outweighs the label look of headings above fields) */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop.escr-edit-ontology > .escr-modal > .escr-modal-content > h3:not(.escr-align-settings) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: none;
+    min-height: 32px;
+    margin: 0 0 8px !important;
+    color: var(--text1);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 20px;
+}
+html:has(#main.escr-vue-enabled) .escr-edit-ontology h3 .escr-button {
+    height: 32px;
+    min-height: 32px;
+    padding: 0 10px;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background-color: var(--background1);
+    color: var(--text1);
+    font-size: 13px;
+}
+html:has(#main.escr-vue-enabled) .escr-edit-ontology h3 .escr-button:hover:not(:disabled) {
+    border-color: var(--background2-darker);
+}
+
+html:has(#main.escr-vue-enabled) .escr-edit-ontology .escr-table tr > :is(td, th).checkbox-column {
+    width: 16px;
+    padding: 0 12px 0 8px;
+}
+html:has(#main.escr-vue-enabled) .escr-edit-ontology .escr-table tr > :is(td, th).color-column {
+    width: 56px;
+}
+html:has(#main.escr-vue-enabled) .escr-edit-ontology .escr-color-button {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 10%);
+}
+html:has(#main.escr-vue-enabled) .escr-edit-ontology .escr-color-button:hover {
+    box-shadow: inset 0 0 0 1px rgb(0 0 0 / 10%), 0 0 0 3px var(--nav-hover);
+}
+html:has(#main.escr-vue-enabled) .escr-edit-ontology .escr-table td.checkbox-column input {
+    display: block;
+}
+
+/* ---- the align modal's "Show advanced settings": a quiet link ---- */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal h3.escr-align-settings .escr-button {
+    height: 24px;
+    min-height: 24px;
+    padding: 0 6px;
+    margin-right: -6px;
+    border: none;
+    overflow: visible;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--primary);
+    font-size: 12.5px;
+    font-weight: 500;
+    text-decoration: none;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal h3.escr-align-settings .escr-button:hover {
+    background-color: var(--nav-hover);
+}
+
+/* ---- metadata: remove is a quiet icon button that turns red on hover ---- */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-metadata-field .metadatum .escr-button {
+    border: 1px solid var(--divider);
+    background-color: var(--background1);
+    color: var(--text2);
+    fill: currentColor;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-metadata-field .metadatum .escr-button:hover:not(:disabled) {
+    border-color: var(--alert);
+    color: var(--alert);
+}
+
+
+/* ---- import: the sources as a track of icon tiles, then the source's form
+   at its natural height ---- */
+html:has(#main.escr-vue-enabled) .escr-import-modal .escr-import-modes {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 2px;
+    margin: 0;
+    padding: 3px;
+    border: none;
+    border-radius: 10px;
+    background-color: var(--nav-hover);
+    list-style: none;
+}
+html:has(#main.escr-vue-enabled) .escr-import-modal .escr-import-modes li {
+    margin: 0;
+    border: none;
+}
+html:has(#main.escr-vue-enabled) .escr-import-modal .escr-import-modes button {
+    display: flex;
+    flex-flow: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    height: 68px;
+    padding: 0 8px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text2);
+    fill: var(--text2);
+    font-size: 12.5px;
+    font-weight: 500;
+    line-height: 16px;
+}
+html:has(#main.escr-vue-enabled) .escr-import-modal .escr-import-modes button:hover {
+    color: var(--text1);
+    fill: var(--text1);
+}
+html:has(#main.escr-vue-enabled) .escr-import-modal .escr-import-modes li.selected button {
+    background-color: var(--background1);
+    color: var(--primary);
+    fill: var(--primary);
+    font-weight: 600;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 12%);
+}
+html:has(#main.escr-vue-enabled) .escr-import-modal .escr-import-modes svg {
+    flex: none;
+    width: 24px;
+    height: 24px;
+    margin: 0;
+}
+html:has(#main.escr-vue-enabled) .escr-import-modal .escr-import-modes li.selected button span {
+    color: var(--text1);
+}
+/* the source's form: its title, a line about it, then the fields */
+html:has(#main.escr-vue-enabled) .escr-import-modal .escr-modal-content > ul + div {
+    display: flex;
+    flex-flow: column;
+    gap: 12px;
+    height: auto;
+    overflow: visible;
+    color: var(--text2);
+    font-size: 13px;
+    line-height: 20px;
+}
+html:has(#main.escr-vue-enabled) .escr-import-modal .escr-modal-content > ul + div > h3 {
+    margin: 0 !important;
+    color: var(--text1);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 20px;
+}
+html:has(#main.escr-vue-enabled) .escr-import-modal .escr-modal-content > ul + div fieldset {
+    display: flex;
+    flex-flow: column;
+    gap: 16px;
+    min-width: 0;
+    margin: 4px 0 0;
+    padding: 0;
+    border: none;
+}
+html:has(#main.escr-vue-enabled) .escr-import-modal input[type="file"] {
+    margin: 0;
+    color: var(--text2);
+    font-size: 13px;
+}
+html:has(#main.escr-vue-enabled) .escr-import-modal input[type="file"]::file-selector-button {
+    height: 32px;
+    margin-right: 10px;
+    padding: 0 12px;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background-color: var(--background1);
+    color: var(--text1);
+    font: inherit;
+    cursor: pointer;
+}
+html:has(#main.escr-vue-enabled) .escr-import-modal input[type="file"]:hover::file-selector-button {
+    border-color: var(--background2-darker);
+}
+html:has(#main.escr-vue-enabled) .escr-import-modal .escr-segmented-button-group {
+    margin: 0;
+}
+html:has(#main.escr-vue-enabled) .escr-import-modal .vue-dropzone {
+    min-height: 0;
+    padding: 24px;
+    border: 1px dashed var(--background2-darker);
+    border-radius: 12px;
+    background-color: var(--background1);
+    color: var(--text2);
+}
+html:has(#main.escr-vue-enabled) .escr-import-modal .vue-dropzone:hover {
+    border-color: var(--text3);
+    background-color: var(--background2);
+}
+html:has(#main.escr-vue-enabled) .escr-import-modal .vue-dropzone.dz-drag-hover {
+    border: 1px solid var(--primary);
+    background-color: var(--primary-focus);
+}
+html:has(#main.escr-vue-enabled) .escr-import-modal .vue-dropzone .dz-message {
+    display: flex;
+    flex-flow: column;
+    align-items: center;
+    gap: 2px;
+    margin: 0;
+}
+html:has(#main.escr-vue-enabled) .escr-import-modal .vue-dropzone .dz-message svg {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 8px;
+    color: var(--text3);
+}
+html:has(#main.escr-vue-enabled) .escr-import-modal .vue-dropzone .dz-message h4 {
+    margin: 0;
+    color: var(--text1);
+    font-size: 14px;
+    font-weight: 600;
+}
+html:has(#main.escr-vue-enabled) .escr-import-modal .vue-dropzone .dz-message p {
+    margin: 0;
+    color: var(--text3);
+    font-size: 12px;
+    line-height: 16px;
+}
+html:has(#main.escr-vue-enabled) .escr-import-modal .vue-dropzone .dz-message p + p {
+    margin: 4px 0;
+}
+html:has(#main.escr-vue-enabled) .escr-import-modal .vue-dropzone .dz-message .escr-button {
+    height: 32px;
+    min-height: 32px;
+    margin: 4px 0 0;
+    padding: 0 14px;
+    font-size: 13px;
+}
+
+/* ---- icons: one set (Lucide, vue/components/Icons/Lucide/icons.js), one
+   size per role: 16px in buttons and notes, 14px beside a label, 20px
+   beside a confirmation's title; drawn in the colour of their text ---- */
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-button svg.escr-icon {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-help-icon svg.escr-icon {
+    width: 14px;
+    height: 14px;
+    color: var(--text3);
+}
+html:has(#main.escr-vue-enabled) .escr-confirm-modal .confirm-header--danger svg.escr-icon {
+    color: var(--alert);
+}
+html:has(#main.escr-vue-enabled) .escr-confirm-modal .confirm-header--primary svg.escr-icon {
+    color: var(--primary);
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-sort-button {
+    align-items: center;
+    gap: 4px;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-sort-button svg {
+    width: 14px;
+    height: 14px;
+}
+html:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal .escr-checkbox-field.escr-region-types > label > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* dark: the controls share the modal's surface, so their outline is all that
+   shows them; a step stronger than the hairlines */
+html.dark-mode:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal :is(
+    .escr-dropdown select,
+    .escr-autocomplete-dropdown input,
+    .escr-text-field input,
+    .escr-multiselect-trigger,
+    .metadatum input,
+    input[type="number"],
+    input[type="url"],
+    textarea,
+    .escr-form-field > select,
+    .escr-create-tag .escr-button,
+    .escr-multiselect-action-btn,
+    .escr-metadata-field .escr-button,
+    .escr-button--outline-primary
+) {
+    border-color: var(--background2-darker);
+}
+html.dark-mode:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal :is(input:not([type="checkbox"], [type="radio"]), select, textarea, .escr-multiselect-trigger, .escr-button--outline-primary, .escr-create-tag .escr-button, .escr-multiselect-action-btn):not(:disabled):hover {
+    border-color: var(--text3);
+}
+html.dark-mode:has(#main.escr-vue-enabled) .escr-modal-backdrop > .escr-modal :is(input:not([type="checkbox"], [type="radio"]), select, textarea):focus {
+    border-color: var(--primary);
+}

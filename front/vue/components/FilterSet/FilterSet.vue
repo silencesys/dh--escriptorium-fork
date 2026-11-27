@@ -12,8 +12,9 @@
             v-if="!hideTags"
             :delay="{ show: 0, hide: 100 }"
             :triggers="[]"
+            :popper-triggers="[]"
             :shown="openFilter === 'tags'"
-            :auto-hide="false"
+            :auto-hide="true"
             @apply-hide="() => toggleOpen(undefined)"
         >
             <FilterButton

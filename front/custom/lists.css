@@ -185,3 +185,233 @@ html:has(#main.escr-vue-enabled) .escr-table.escr-table--selectable:not(#escr-ed
 html:has(#main.escr-vue-enabled) .escr-table.escr-table--selectable:not(#escr-editor *) tbody tr:has(input:checked) > td:first-child {
     box-shadow: inset 2px 0 0 var(--primary);
 }
+
+/*
+ * Cards: Projects and a project's Documents as a grid of cards (the default;
+ * the table stays one switch away). A card: its cover (a few page images, or
+ * an icon), name, a line about it, tags; its actions come up on hover or
+ * focus. Markup: vue/components/GridCard.
+ */
+html:has(#main.escr-vue-enabled) .escr-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+/* the grid's hover shadows and focus rings are not clipped */
+html:has(#main.escr-vue-enabled) .table-container:has(> .escr-card-grid) {
+    overflow: visible;
+}
+html:has(#main.escr-vue-enabled) .escr-grid-card {
+    position: relative;
+    display: flex;
+    flex-flow: column;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--divider);
+    border-radius: 12px;
+    background-color: var(--background1);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+html:has(#main.escr-vue-enabled) .escr-grid-card:hover {
+    border-color: var(--background2-darker);
+    box-shadow: 0 6px 20px rgb(9 9 11 / 6%);
+}
+html.dark-mode:has(#main.escr-vue-enabled) .escr-grid-card:hover {
+    box-shadow: 0 6px 20px rgb(0 0 0 / 35%);
+}
+html:has(#main.escr-vue-enabled) .escr-grid-card:has(.escr-grid-card-link:focus-visible) {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-focus);
+}
+/* the cover: images side by side, 2px apart */
+html:has(#main.escr-vue-enabled) .escr-grid-card-cover {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    height: 136px;
+    border-bottom: 1px solid var(--divider);
+    background-color: var(--background2);
+}
+html:has(#main.escr-vue-enabled) .escr-grid-card-cover img {
+    display: block;
+    flex: 1 1 0;
+    min-width: 0;
+    height: 100%;
+    object-fit: cover;
+}
+html:has(#main.escr-vue-enabled) .escr-grid-card-placeholder {
+    width: 28px;
+    height: 28px;
+    color: var(--text3);
+}
+html:has(#main.escr-vue-enabled) .escr-grid-card-body {
+    display: flex;
+    flex-flow: column;
+    gap: 2px;
+    min-width: 0;
+    padding: 12px 14px 14px;
+}
+html:has(#main.escr-vue-enabled) .escr-grid-card-title {
+    margin: 0;
+    overflow: hidden;
+    color: var(--text1);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+html:has(#main.escr-vue-enabled) .escr-grid-card-link {
+    color: inherit;
+    text-decoration: none;
+}
+html:has(#main.escr-vue-enabled) .escr-grid-card-link:hover {
+    color: inherit;
+    text-decoration: none;
+}
+html:has(#main.escr-vue-enabled) .escr-grid-card-link:focus-visible {
+    outline: none;
+}
+/* the whole card follows the link */
+html:has(#main.escr-vue-enabled) .escr-grid-card-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+html:has(#main.escr-vue-enabled) .escr-grid-card-meta {
+    margin: 0;
+    overflow: hidden;
+    color: var(--text2);
+    font-size: 12px;
+    line-height: 16px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+html:has(#main.escr-vue-enabled) .escr-grid-card-body > .escr-tag-group {
+    margin-top: 8px;
+}
+html:has(#main.escr-vue-enabled) .escr-grid-card-body > .escr-tag-group .escr-tag {
+    height: 22px;
+    padding: 0 8px;
+    font-size: 11.5px;
+}
+/* actions: small buttons over the cover's corner */
+html:has(#main.escr-vue-enabled) .escr-grid-card-actions {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 2;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+html:has(#main.escr-vue-enabled) .escr-grid-card:is(:hover, :focus-within) .escr-grid-card-actions {
+    opacity: 1;
+}
+@media (hover: none) {
+    html:has(#main.escr-vue-enabled) .escr-grid-card-actions {
+        opacity: 1;
+    }
+}
+html:has(#main.escr-vue-enabled) .escr-grid-card-actions .escr-button {
+    width: 28px;
+    min-width: 28px;
+    height: 28px;
+    min-height: 28px;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background-color: var(--background1);
+    color: var(--text2);
+    box-shadow: 0 1px 2px rgb(9 9 11 / 8%);
+}
+html:has(#main.escr-vue-enabled) .escr-grid-card-actions .escr-button:hover:not(:disabled) {
+    background-color: var(--background1);
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) .escr-grid-card-actions .escr-button[aria-label^="Delete"]:hover:not(:disabled) {
+    border-color: var(--alert);
+    color: var(--alert);
+}
+html:has(#main.escr-vue-enabled) .escr-grid-card-actions .escr-button svg {
+    width: 16px;
+    height: 16px;
+}
+html:has(#main.escr-vue-enabled) :is(.escr-card-grid, .table-container) + .escr-load-more-btn {
+    margin: 20px auto 0;
+}
+
+/* the grid's order, beside the filters: a select on the 32px scale */
+html:has(#main.escr-vue-enabled) .escr-grid-sort {
+    box-sizing: border-box;
+    height: 32px;
+    margin: 0;
+    padding: 0 30px 0 10px;
+    appearance: none;
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    background: var(--background1) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 7px center;
+    color: var(--text1);
+    font-size: 13px;
+    cursor: pointer;
+}
+html:has(#main.escr-vue-enabled) .escr-grid-sort:hover:not(:disabled) {
+    border-color: var(--background2-darker);
+}
+html:has(#main.escr-vue-enabled) .escr-grid-sort:focus-visible {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-focus);
+    outline: none;
+}
+
+/* cards or list: two icons on a track */
+html:has(#main.escr-vue-enabled) .escr-view-switch {
+    flex: none;
+    gap: 2px;
+    height: 32px;
+    padding: 2px;
+    box-sizing: border-box;
+    border-radius: 8px;
+    background-color: var(--nav-hover);
+}
+html:has(#main.escr-vue-enabled) .escr-view-switch > div {
+    flex: none;
+    height: 28px;
+    max-height: 28px;
+}
+html:has(#main.escr-vue-enabled) .escr-view-switch > div :is(label) {
+    width: 32px;
+    height: 28px;
+    min-height: 28px;
+    margin: 0;
+    padding: 0;
+    border-radius: 6px !important;
+}
+html:has(#main.escr-vue-enabled) .escr-view-switch input:not(:checked) + :is(label, div > label) {
+    background-color: transparent;
+    color: var(--text2);
+}
+html:has(#main.escr-vue-enabled) .escr-view-switch input:not(:checked) + :is(label, div > label):hover {
+    background-color: transparent;
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) .escr-view-switch input:checked + :is(label, div > label) {
+    background-color: var(--background1);
+    color: var(--text1);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 12%);
+}
+html:has(#main.escr-vue-enabled) .escr-view-switch input:focus-visible + :is(label, div > label) {
+    box-shadow: 0 0 0 2px var(--primary-focus);
+}
+html:has(#main.escr-vue-enabled) .escr-view-switch svg {
+    width: 16px;
+    height: 16px;
+}

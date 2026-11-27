@@ -35,12 +35,17 @@
     background: var(--background);
     color: var(--text1);
 }
+/*
+ * The logo and the row icons share one axis, the collapsed rail's centre
+ * (32px), open or collapsed: opening the navigation moves nothing on it.
+ */
 .escr-global-nav .escr-nav-logo {
     display: flex;
     align-items: center;
     flex: none;
     height: var(--topbar-height);
-    padding-left: 8px;
+    /* 12px nav padding + 5px + 15px (half the logo) = 32px */
+    padding-left: 5px;
     margin-bottom: 8px;
 }
 .escr-global-nav .escr-nav-logo svg {
@@ -73,7 +78,8 @@
     width: 100%;
     height: 36px;
     margin: 0;
-    padding: 0 10px;
+    /* 12px nav padding + 11px + 9px (half the icon) = 32px, as collapsed */
+    padding: 0 10px 0 11px;
     border: none;
     border-radius: 8px;
     background: transparent;
@@ -275,10 +281,6 @@ body.escr-body > main .escr-page-container {
  */
 html.escr-nav-collapsed {
     --nav-width: 64px;
-}
-.escr-nav-collapsed .escr-global-nav .escr-nav-logo {
-    justify-content: center;
-    padding-left: 0;
 }
 .escr-nav-collapsed .escr-global-nav :is(.escr-globalnav-icon, .escr-sidebar-button) {
     justify-content: center;

@@ -833,37 +833,6 @@ html:has(#main.escr-vue-enabled) .escr-monitoring-table .escr-monitoring-check {
     width: 40px;
     padding-right: 0;
 }
-/* checkboxes: a hairline box, filled with the accent when ticked (or
-   partly, in the header) */
-html:has(#main.escr-vue-enabled) .escr-monitoring-check input {
-    box-sizing: border-box;
-    width: 16px;
-    height: 16px;
-    margin: 0;
-    vertical-align: middle;
-    appearance: none;
-    border: 1px solid var(--background2-darker);
-    border-radius: 4px;
-    background: var(--background1) no-repeat center / 12px;
-    cursor: pointer;
-}
-html:has(#main.escr-vue-enabled) .escr-monitoring-check input:hover:not(:disabled) {
-    border-color: var(--text3);
-}
-html:has(#main.escr-vue-enabled) .escr-monitoring-check input:is(:checked, :indeterminate) {
-    border-color: var(--primary);
-    background-color: var(--primary);
-}
-html:has(#main.escr-vue-enabled) .escr-monitoring-check input:checked {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
-}
-html:has(#main.escr-vue-enabled) .escr-monitoring-check input:indeterminate {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 12h12'/%3E%3C/svg%3E");
-}
-html:has(#main.escr-vue-enabled) .escr-monitoring-check input:focus-visible {
-    outline: none;
-    box-shadow: 0 0 0 3px var(--primary-focus);
-}
 html:has(#main.escr-vue-enabled) .escr-monitoring-table td.escr-monitoring-name {
     width: 40%;
     max-width: 0;
@@ -921,10 +890,6 @@ html:has(#main.escr-vue-enabled) .escr-monitoring-modal-list li {
     display: flex;
     justify-content: space-between;
     gap: 12px;
-}
-html:has(#main.escr-vue-enabled) .escr-monitoring-check input:disabled {
-    opacity: 0.4;
-    cursor: default;
 }
 
 /* ---- My Exports (vue/pages/Exports) ---- */

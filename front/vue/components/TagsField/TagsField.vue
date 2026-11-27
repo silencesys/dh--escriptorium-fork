@@ -1,8 +1,7 @@
 <script>
 import { Dropdown as VDropdown } from "floating-vue";
-import CheckIcon from "../Icons/CheckIcon/CheckIcon.vue";
+import { CheckIcon, PlusIcon } from "../Icons/Lucide/icons";
 import EscrButton from "../Button/Button.vue";
-import PlusIcon from "../Icons/PlusIcon/PlusIcon.vue";
 import Tags from "../Tags/Tags.vue";
 import TextField from "../TextField/TextField.vue";
 
@@ -71,6 +70,32 @@ export default {
         },
     },
     methods: {
+        /**
+         * Enter in the search field: pick the tag of that name, or create it in the
+         * first colour no tag uses yet (the colour picker stays on the button).
+         */
+        handleKeydown(event) {
+            if (event.key !== "Enter" || event.isComposing) return;
+            event.preventDefault();
+            const name = this.tagName?.trim();
+            if (this.disabled || !name) return;
+            const existing = this.tags.find(
+                (tag) => tag.name?.toLowerCase() === name.toLowerCase()
+            );
+            if (existing) {
+                if (!this.selectedTags.includes(existing.pk)) {
+                    this.onChange({ checked: true, tag: existing });
+                }
+                this.onChangeTagName({ target: { value: "" } });
+                return;
+            }
+            // the picker's 30 colours, past the first (a neutral grey)
+            const used = new Set(this.tags.map((tag) => tag.variant));
+            const colours = [...Array(29).keys()].map((n) => n + 2);
+            const variant = colours.find((n) => !used.has(n))
+                || colours[this.tags.length % colours.length];
+            this.onCreateTag(tagVariants[variant - 1]);
+        },
         /**
          * Determine which variant class to apply based on props.
          */
@@ -188,6 +213,18 @@ export default {
             return [];
         },
         /*
+         * Helper method to render how picking tags works
+         */
+        renderTagsHelp(h) {
+            if (!this.tags.length) return [];
+            return h(
+                "span",
+                { class: "escr-help-text" },
+                "Filled tags with a tick are selected: click a tag to select or deselect it. "
+                + "Enter selects or creates the tag you typed.",
+            );
+        },
+        /*
          * Helper method to render the "add tag" button
          */
         renderAddTagButton(h) {
@@ -233,8 +270,12 @@ export default {
                             value: this.tagName,
                             maxLength: 100,
                         },
+                        on: {
+                            keydown: this.handleKeydown,
+                        },
                     }
                 ),
+                this.renderTagColorPicker(h),
                 h(
                     "div",
                     { class: "escr-tag-field-group" },
@@ -245,7 +286,7 @@ export default {
                     ),
                 ),
                 this.renderFilteredTagNotice(h),
-                this.renderTagColorPicker(h),
+                this.renderTagsHelp(h),
             ],
         );
     },

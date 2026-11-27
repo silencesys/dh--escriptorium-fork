@@ -11,6 +11,7 @@ from .tasks.views import MyTasks, TaskDetail
 
 urlpatterns = [
     path('api/custom/', include('escr_custom.training.urls')),
+    path('api/custom/', include('escr_custom.covers.urls')),
     path('quotas/', MyTasks.as_view()),
     path('quotas/<int:pk>/', TaskDetail.as_view()),
     *upstream_urlpatterns,

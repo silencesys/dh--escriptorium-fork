@@ -11,6 +11,7 @@ import "../components/ConfirmModal/ConfirmModal.css";
 import "../../custom/index.css";
 import enhanceFileDrops from "../../custom/fileDrop";
 import enhanceCharts from "../../custom/charts";
+import measureScrollbars from "../../custom/scrollbars";
 
 /*
  * Standalone navigation for pages rendered by Django. Vue pages built on
@@ -20,6 +21,7 @@ import enhanceCharts from "../../custom/charts";
 function mount() {
     enhanceFileDrops();
     enhanceCharts();
+    measureScrollbars();
     const el = document.getElementById("vue-global-nav");
     if (!el) return;
     if (document.querySelector(".escr-global-nav")) {

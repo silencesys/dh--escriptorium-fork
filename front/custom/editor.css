@@ -356,9 +356,12 @@ html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .escr-con
 }
 /* its chevron, centred on the 32px control */
 html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .escr-dropdown:has(> select) > svg {
-    top: 13px;
-    right: 8px;
-    fill: var(--text2);
+    top: 50%;
+    right: 4px;
+    width: 16px;
+    height: 16px;
+    transform: translateY(-50%);
+    color: var(--text2);
 }
 html:has(#main.escr-vue-enabled) #escr-editor .col.panel .escr-toolbar .escr-editortools-switcher button svg + svg {
     width: 14px;

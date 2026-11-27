@@ -94,14 +94,10 @@
 </template>
 <script>
 import { mapActions, mapState } from "vuex";
-import CheckCircleIcon from "../Icons/CheckCircleIcon/CheckCircleIcon.vue";
+import { CheckCircleIcon, PencilIcon, TrashIcon, XCircleIcon, XIcon } from "../Icons/Lucide/icons";
 import EscrButton from "../Button/Button.vue";
 import EscrModal from "../Modal/Modal.vue";
 import EscrTable from "../Table/Table.vue";
-import PencilIcon from "../Icons/PencilIcon/PencilIcon.vue";
-import TrashIcon from "../Icons/TrashIcon/TrashIcon.vue";
-import XCircleIcon from "../Icons/XCircleIcon/XCircleIcon.vue";
-import XIcon from "../Icons/XIcon/XIcon.vue";
 import "./TranscriptionsModal.css";
 
 export default {

@@ -10,8 +10,7 @@
     </div>
 </template>
 <script>
-import InfoFilledIcon from "../Icons/InfoFilledIcon/InfoFilledIcon.vue";
-import WarningIcon from "../Icons/WarningIcon/WarningIcon.vue";
+import { InfoFilledIcon, WarningIcon } from "../Icons/Lucide/icons";
 import "./Alert.css";
 
 export default {

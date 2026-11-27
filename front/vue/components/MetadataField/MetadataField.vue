@@ -47,8 +47,7 @@
 </template>
 <script>
 import EscrButton from "../Button/Button.vue";
-import PlusIcon from "../Icons/PlusIcon/PlusIcon.vue";
-import XIcon from "../Icons/XIcon/XIcon.vue";
+import { PlusIcon, XIcon } from "../Icons/Lucide/icons";
 import "./MetadataField.css";
 
 export default {

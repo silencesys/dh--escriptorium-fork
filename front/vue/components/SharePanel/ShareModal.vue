@@ -55,7 +55,7 @@ import { mapActions, mapState } from "vuex";
 import EscrAutocompleteDropdown from "../AutocompleteDropdown/AutocompleteDropdown.vue";
 import EscrButton from "../Button/Button.vue";
 import EscrModal from "../Modal/Modal.vue";
-import XIcon from "../Icons/XIcon/XIcon.vue";
+import { XIcon } from "../Icons/Lucide/icons";
 import "./ShareModal.css";
 
 export default {

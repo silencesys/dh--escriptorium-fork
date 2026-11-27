@@ -124,6 +124,35 @@
                                 :on-filter="onFilterDocuments"
                                 search-placeholder="Search documents..."
                             />
+                            <select
+                                v-if="viewMode === 'grid'"
+                                class="escr-grid-sort"
+                                aria-label="Sort documents"
+                                :disabled="loading"
+                                :value="sortValue"
+                                @change="onSortChange"
+                            >
+                                <option
+                                    v-if="!sortValue"
+                                    value=""
+                                >
+                                    Default order
+                                </option>
+                                <option
+                                    v-for="option in sortOptions"
+                                    :key="option.value"
+                                    :value="option.value"
+                                >
+                                    {{ option.label }}
+                                </option>
+                            </select>
+                            <SegmentedButtonGroup
+                                color="secondary"
+                                name="documents-display-mode"
+                                class="escr-view-switch"
+                                :options="viewModeOptions(GridIcon, ListIcon)"
+                                :on-change-selection="setViewMode"
+                            />
                             <EscrButton
                                 label="New document"
                                 :on-click="openCreateDocumentModal"
@@ -139,7 +168,53 @@
                         v-if="documents.length"
                         class="table-container"
                     >
+                        <ul
+                            v-if="viewMode === 'grid'"
+                            class="escr-card-grid"
+                        >
+                            <GridCard
+                                v-for="document in documents"
+                                :key="document.pk"
+                                :href="document.href"
+                                :title="document.name"
+                                :covers="covers[document.pk] || []"
+                                :placeholder-icon="ManuscriptIcon"
+                                :tags="document.tags.tags"
+                            >
+                                <template #meta>
+                                    {{ plural(document.parts_count, "image") }}
+                                    · {{ formatDate(document.updated_at) }}
+                                </template>
+                                <template #actions>
+                                    <EscrButton
+                                        v-tooltip.bottom="'Images'"
+                                        size="small"
+                                        color="text"
+                                        :on-click="() => navigateToImages(document)"
+                                        :disabled="loading"
+                                        aria-label="Document images"
+                                    >
+                                        <template #button-icon>
+                                            <ImagesIcon />
+                                        </template>
+                                    </EscrButton>
+                                    <EscrButton
+                                        v-tooltip.bottom="'Delete'"
+                                        size="small"
+                                        color="text"
+                                        :on-click="() => openDeleteDocumentModal(document)"
+                                        :disabled="loading"
+                                        aria-label="Delete document"
+                                    >
+                                        <template #button-icon>
+                                            <TrashIcon />
+                                        </template>
+                                    </EscrButton>
+                                </template>
+                            </GridCard>
+                        </ul>
                         <EscrTable
+                            v-else
                             item-key="pk"
                             :headers="headers"
                             :items="documents"
@@ -281,14 +356,22 @@ import EscrPage from "../Page/Page.vue";
 import EscrTable from "../../components/Table/Table.vue";
 import EscrTags from "../../components/Tags/Tags.vue";
 import FilterSet from "../../components/FilterSet/FilterSet.vue";
-import ImagesIcon from "../../components/Icons/ImagesIcon/ImagesIcon.vue";
+import GridCard from "../../components/GridCard/GridCard.vue";
+import viewMode from "../../components/GridCard/viewMode";
+import {
+    GridIcon,
+    ImagesIcon,
+    ListIcon,
+    ManuscriptIcon,
+    PlusIcon,
+    TrashIcon,
+} from "../../components/Icons/Lucide/icons";
 import PeopleIcon from "../../components/Icons/PeopleIcon/PeopleIcon.vue";
-import PlusIcon from "../../components/Icons/PlusIcon/PlusIcon.vue";
 import SearchIcon from "../../components/Icons/SearchIcon/SearchIcon.vue";
 import SearchPanel from "../../components/SearchPanel/SearchPanel.vue";
 import ShareModal from "../../components/SharePanel/ShareModal.vue";
 import SharePanel from "../../components/SharePanel/SharePanel.vue";
-import TrashIcon from "../../components/Icons/TrashIcon/TrashIcon.vue";
+import SegmentedButtonGroup from "../../components/SegmentedButtonGroup/SegmentedButtonGroup.vue";
 import VerticalMenu from "../../components/VerticalMenu/VerticalMenu.vue";
 import lucideIcon from "../../components/Icons/Lucide/lucideIcon";
 import "../../components/Common/Card.css"
@@ -319,13 +402,16 @@ export default {
         EscrTags,
         ExternalIcon,
         FilterSet,
+        GridCard,
         ImagesIcon,
         PlusIcon,
+        SegmentedButtonGroup,
         ShareIcon,
         ShareModal,
         TrashIcon,
         VerticalMenu,
     },
+    mixins: [viewMode("documents", "documents")],
     props: {
         /**
          * The primary key/id of the current project.
@@ -345,6 +431,9 @@ export default {
     data() {
         return {
             clearOntologyModalOpen: false,
+            GridIcon,
+            ListIcon,
+            ManuscriptIcon,
         };
     },
     computed: {
@@ -355,6 +444,7 @@ export default {
             deleteDocumentModalOpen: (state) => state.project.deleteDocumentModalOpen,
             createdAt: (state) => state.project.createdAt,
             documents: (state) => state.project.documents,
+            documentsSortState: (state) => state.project.sortState,
             documentsCount: (state) => state.project.documentsCount,
             documentTags: (state) => state.project.documentTags,
             documentToDelete: (state) => state.project.documentToDelete,
@@ -388,6 +478,20 @@ export default {
         /**
          * Table headers for the document list in the project dashboard.
          */
+        /**
+         * The orders the grid offers (the table sorts by its headers).
+         */
+        sortOptions() {
+            return [
+                { value: "updated_at:-1", label: "Recently updated" },
+                { value: "name:1", label: "Name" },
+                { value: "parts_count:-1", label: "Most images" },
+            ];
+        },
+        sortValue() {
+            const { field, direction } = this.documentsSortState || {};
+            return field && direction ? `${field}:${direction}` : "";
+        },
         headers() {
             return [
                 { label: "Name", value: "name", sortable: true },
@@ -510,6 +614,10 @@ export default {
             return actions;
         },
     },
+    watch: {
+        documents: "showCovers",
+        viewMode: "showCovers",
+    },
     /**
      * On load, fetch basic details about the project.
      */
@@ -525,6 +633,16 @@ export default {
         this.setLoading(false);
     },
     methods: {
+        plural,
+        showCovers() {
+            if (this.viewMode === "grid") {
+                this.loadCovers(this.documents.map((document) => document.pk));
+            }
+        },
+        onSortChange(event) {
+            const [field, direction] = event.target.value.split(":");
+            this.sortDocuments({ field, direction: Number(direction) });
+        },
         ...mapActions("project", [
             "clearOntology",
             "closeCreateDocumentModal",

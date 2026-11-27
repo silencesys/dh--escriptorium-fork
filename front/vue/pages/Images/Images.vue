@@ -116,6 +116,7 @@
                         <SegmentedButtonGroup
                             color="secondary"
                             name="images-display-mode"
+                            class="escr-view-switch"
                             :disabled="loading && loading.images"
                             :options="viewOptions"
                             :on-change-selection="setDisplayMode"
@@ -542,7 +543,6 @@ import ExportIcon from "../../components/Icons/ExportIcon/ExportIcon.vue";
 import DownloadArchiveModal from "../../components/DownloadArchiveModal/DownloadArchiveModal.vue";
 import DownloadIcon from "../../components/Icons/DownloadIcon/DownloadIcon.vue";
 import ExportModal from "../../components/ExportModal/ExportModal.vue";
-import GridIcon from "../../components/Icons/GridIcon/GridIcon.vue";
 import HiddenImagesIndicator from "./HiddenImagesIndicator.vue";
 import HorizMenuIcon from "../../components/Icons/HorizMenuIcon/HorizMenuIcon.vue";
 import ImageCard from "../../components/ImageCard/ImageCard.vue";
@@ -550,7 +550,7 @@ import ImageWorkflowStatus from "./ImageWorkflowStatus.vue";
 import ImportIcon from "../../components/Icons/ImportIcon/ImportIcon.vue";
 import ImportModal from "../../components/ImportModal/ImportModal.vue";
 import LineOrderingIcon from "../../components/Icons/LineOrderingIcon/LineOrderingIcon.vue";
-import ListIcon from "../../components/Icons/ListIcon/ListIcon.vue";
+import { GridIcon, ListIcon } from "../../components/Icons/Lucide/icons";
 import MasksIcon from "../../components/Icons/MasksIcon/MasksIcon.vue";
 import ModelsIcon from "../../components/Icons/ModelsIcon/ModelsIcon.vue";
 import ModelsPanel from "../../components/ModelsPanel/ModelsPanel.vue";

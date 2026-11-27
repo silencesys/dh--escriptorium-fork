@@ -24,7 +24,7 @@ const ATTRS = {
     focusable: "false",
 };
 
-export default function lucideIcon(iconNode) {
+export default function lucideIcon(iconNode, className) {
     return {
         functional: true,
         render(h, { data }) {
@@ -32,7 +32,8 @@ export default function lucideIcon(iconNode) {
                 "svg",
                 {
                     ...data,
-                    staticClass: ["escr-icon", data.staticClass].filter(Boolean).join(" "),
+                    staticClass: ["escr-icon", className, data.staticClass]
+                        .filter(Boolean).join(" "),
                     attrs: { ...ATTRS, ...data.attrs },
                 },
                 iconNode.map(([tag, attrs]) => h(tag, { attrs })),

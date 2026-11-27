@@ -249,7 +249,7 @@ import {
 import EscrButton from "../Button/Button.vue";
 import EscrModal from "../Modal/Modal.vue";
 import lucideIcon from "../Icons/Lucide/lucideIcon";
-import WarningIcon from "../Icons/WarningIcon/WarningIcon.vue";
+import { WarningIcon } from "../Icons/Lucide/icons";
 
 const BanIcon = lucideIcon(Ban);
 // the states as the API names them, with how the tasks pages show them

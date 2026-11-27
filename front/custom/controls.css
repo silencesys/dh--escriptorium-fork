@@ -249,3 +249,74 @@ html:has(#main.escr-vue-enabled) .escr-image-card .escr-image-actions .escr-butt
 html:has(#main.escr-vue-enabled) .escr-image-card .escr-image-actions.context-menu-open .context-menu-button:not(#escr-editor *) {
     background-color: var(--nav-hover);
 }
+
+/* checkboxes of Task Monitoring and of modals: a hairline box, filled
+   with the accent when ticked (or partly, in a table header) */
+html:has(#main.escr-vue-enabled) :is(.escr-monitoring-check, .escr-modal-backdrop > .escr-modal, .escr-tag-filter) input[type="checkbox"] {
+    box-sizing: border-box;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    vertical-align: middle;
+    appearance: none;
+    border: 1px solid var(--background2-darker);
+    border-radius: 4px;
+    background: var(--background1) no-repeat center / 12px;
+    cursor: pointer;
+}
+html:has(#main.escr-vue-enabled) :is(.escr-monitoring-check, .escr-modal-backdrop > .escr-modal, .escr-tag-filter) input[type="checkbox"]:hover:not(:disabled) {
+    border-color: var(--text3);
+}
+html:has(#main.escr-vue-enabled) :is(.escr-monitoring-check, .escr-modal-backdrop > .escr-modal, .escr-tag-filter) input[type="checkbox"]:is(:checked, :indeterminate) {
+    border-color: var(--primary);
+    background-color: var(--primary);
+}
+html:has(#main.escr-vue-enabled) :is(.escr-monitoring-check, .escr-modal-backdrop > .escr-modal, .escr-tag-filter) input[type="checkbox"]:checked {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+}
+html:has(#main.escr-vue-enabled) :is(.escr-monitoring-check, .escr-modal-backdrop > .escr-modal, .escr-tag-filter) input[type="checkbox"]:indeterminate {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M6 12h12'/%3E%3C/svg%3E");
+}
+html:has(#main.escr-vue-enabled) :is(.escr-monitoring-check, .escr-modal-backdrop > .escr-modal, .escr-tag-filter) input[type="checkbox"]:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--primary-focus);
+}
+html:has(#main.escr-vue-enabled) :is(.escr-monitoring-check, .escr-modal-backdrop > .escr-modal, .escr-tag-filter) input[type="checkbox"]:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+/*
+ * The shared controls draw Lucide icons (vue/components/Icons/Lucide/icons.js):
+ * the select chevron at 18px (drawn 9px wide), centred on its control and
+ * ending 12px in; notes' icons at 16px in their text colour. Modals size the
+ * rest (custom/modals.css).
+ */
+html:has(#main.escr-vue-enabled) :is(.escr-dropdown, .escr-autocomplete-dropdown) svg.escr-icon.escr-chevron-down-icon,
+html:has(#main.escr-vue-enabled) .escr-multiselect-trigger svg.escr-icon {
+    position: absolute;
+    top: 50%;
+    right: 7px;
+    width: 18px;
+    height: 18px;
+    transform: translateY(-50%);
+    color: var(--text2);
+    pointer-events: none;
+}
+html:has(#main.escr-vue-enabled) .escr-multiselect-trigger--open svg.escr-icon {
+    transform: translateY(-50%) rotate(180deg);
+}
+html:has(#main.escr-vue-enabled) .escr-alert svg.escr-icon {
+    width: 16px;
+    height: 16px;
+    color: inherit;
+}
+html:has(#main.escr-vue-enabled) .escr-help-icon svg.escr-icon {
+    width: 14px;
+    height: 14px;
+    color: var(--text3);
+}
+/* room for that chevron in every select of the shared dropdown */
+html:has(#main.escr-vue-enabled) .escr-dropdown:has(> svg.escr-chevron-down-icon) > select {
+    padding-right: 30px;
+}

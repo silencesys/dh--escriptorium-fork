@@ -41,7 +41,7 @@
 </template>
 <script>
 import EscrAutocompleteDropdown from "./AutocompleteDropdown.vue";
-import InfoOutlineIcon from "../Icons/InfoOutlineIcon/InfoOutlineIcon.vue";
+import { InfoOutlineIcon } from "../Icons/Lucide/icons";
 import "../Common/Form.css";
 
 export default {
