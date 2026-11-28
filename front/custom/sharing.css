@@ -1,0 +1,418 @@
+/*
+ * Sharing (Django pages): a model's shares (model/<id>/rights/) and the page
+ * confirming one is stopped, the user's teams (profile/teams/) and a team's
+ * page (teams/<id>/). Only CSS, like the models list: the pages carry no class
+ * of their own, so each is recognised by what it holds. Bootstrap's centred
+ * containers and grid rows give way to the pages' own left-aligned column,
+ * the headings to the UI's, Font Awesome glyphs to Lucide masks, and the loud
+ * buttons and pills to quiet ones.
+ */
+html:has(#main.escr-vue-enabled) {
+    --escr-icon-trash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 11v6'/%3E%3Cpath d='M14 11v6'/%3E%3Cpath d='M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6'/%3E%3Cpath d='M3 6h18'/%3E%3Cpath d='M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'/%3E%3C/svg%3E");
+    --escr-icon-plus: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14'/%3E%3Cpath d='M12 5v14'/%3E%3C/svg%3E");
+    --escr-icon-user: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E");
+    --escr-icon-users: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2'/%3E%3Cpath d='M16 3.128a4 4 0 0 1 0 7.744'/%3E%3Cpath d='M22 21v-2a4 4 0 0 0-3-3.87'/%3E%3Ccircle cx='9' cy='7' r='4'/%3E%3C/svg%3E");
+    --escr-icon-chevron-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m15 18-6-6 6-6'/%3E%3C/svg%3E");
+}
+
+/* ======== shared by the four pages ======== */
+
+/* the content: one left-aligned column, not Bootstrap's centred container */
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:is(
+    :has(> .container > .col-md-8 > form #id_name),
+    :has(> .container #id_recipient_id)
+) > .container {
+    max-width: 720px;
+    margin: 0;
+    padding: 0;
+    /* upstream paints every Django page's container as a card: these sit
+       flat on the page, like the other lists */
+    border-radius: 0;
+    background: none;
+}
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> .container > .col-md-8 > form #id_name) > .container > .col-md-8 {
+    max-width: none;
+    padding: 0;
+}
+/* spacing comes from the headings, not line breaks */
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> .container > .col-md-8 > form #id_name) .col-md-8 > br {
+    display: none;
+}
+
+/* section headings: the UI's, not Bootstrap's */
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> .container > .col-md-8 > form #id_name) .col-md-8 > h4,
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> .container #id_recipient_id) > .container > h2 {
+    margin: 32px 0 10px;
+    font-family: "Noto Sans", "Resized Arabic", sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 24px;
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> .container > .col-md-8 > form #id_name) .col-md-8 > h4:first-child,
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> .container #id_recipient_id) > .container > h2:first-child {
+    margin-top: 20px;
+}
+
+/* a name and its button on one row */
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:is(
+    :has(> .container > .col-md-8 > form #id_name),
+    :has(> .container #id_recipient_id)
+) .form-row {
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0;
+}
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:is(
+    :has(> .container > .col-md-8 > form #id_name),
+    :has(> .container #id_recipient_id)
+) .form-row > [class^="col"] {
+    padding: 0;
+}
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:is(
+    :has(> .container > .col-md-8 > form #id_name),
+    :has(> .container #id_recipient_id)
+) .form-row .form-group {
+    margin-bottom: 0;
+}
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:is(
+    :has(> .container > .col-md-8 > form #id_name),
+    :has(> .container #id_recipient_id)
+) .form-row .btn-block {
+    width: auto;
+    white-space: nowrap;
+}
+
+/* tables built from Bootstrap's grid (rows and columns as cells): back to a table */
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:is(
+    :has(> .container > .col-md-8 > form #id_name),
+    :has(> .container #id_recipient_id)
+) table.table {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+}
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:is(
+    :has(> .container > .col-md-8 > form #id_name),
+    :has(> .container #id_recipient_id)
+) table.table tr.row {
+    display: table-row;
+    margin: 0;
+}
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:is(
+    :has(> .container > .col-md-8 > form #id_name),
+    :has(> .container #id_recipient_id)
+) table.table td:is(.col, .col-auto) {
+    display: table-cell;
+    max-width: none;
+    width: auto;
+    vertical-align: middle;
+}
+/* the name takes the row, actions and notes keep to the right */
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:is(
+    :has(> .container > .col-md-8 > form #id_name),
+    :has(> .container #id_recipient_id)
+) table.table td.col {
+    width: 100%;
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:is(
+    :has(> .container > .col-md-8 > form #id_name),
+    :has(> .container #id_recipient_id)
+) table.table td.col-auto {
+    white-space: nowrap;
+    color: var(--text2);
+}
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:is(
+    :has(> .container > .col-md-8 > form #id_name),
+    :has(> .container #id_recipient_id)
+) table.table td form {
+    margin: 0;
+}
+
+/* removing someone, or leaving: quiet, red only when pointed at */
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:is(
+    :has(> .container > .col-md-8 > form #id_name),
+    :has(> .container #id_recipient_id),
+    :has(> #rights-table)
+) table.table td .btn.btn-danger {
+    min-height: 28px;
+    padding: 0 10px;
+    border: 1px solid var(--divider);
+    background-color: var(--background1);
+    color: var(--text1);
+    font-size: 12.5px;
+}
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:is(
+    :has(> .container > .col-md-8 > form #id_name),
+    :has(> .container #id_recipient_id),
+    :has(> #rights-table)
+) table.table td .btn.btn-danger:hover {
+    border-color: color-mix(in srgb, var(--alert) 40%, var(--divider));
+    background-color: color-mix(in srgb, var(--alert) 10%, var(--background1));
+    color: var(--alert);
+}
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:is(
+    :has(> .container > .col-md-8 > form #id_name),
+    :has(> .container #id_recipient_id),
+    :has(> #rights-table)
+) table.table td .btn.btn-danger:focus-visible {
+    box-shadow: 0 0 0 3px var(--alert-focus, var(--primary-focus));
+}
+
+/* ======== a model's shares ======== */
+
+/* the title, like every page's */
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> #rights-table) > h2 {
+    margin: 0 0 24px;
+    font-family: "Noto Sans", "Resized Arabic", sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 33px;
+    color: var(--text1);
+    overflow-wrap: anywhere;
+}
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> #rights-table) > h2 strong {
+    font-weight: inherit;
+}
+
+/* who it's shared with: a quiet chip with a person or a group */
+html:has(#main.escr-vue-enabled) #rights-table .badge.badge-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px 3px 6px;
+    border-radius: 6px;
+    background-color: var(--nav-active);
+    color: var(--text2);
+    font-size: 11.5px;
+    font-weight: 500;
+    line-height: 1.2;
+}
+html:has(#main.escr-vue-enabled) #rights-table .badge.badge-pill::before {
+    content: "";
+    width: 12px;
+    height: 12px;
+    background-color: currentColor;
+    -webkit-mask: var(--escr-icon-user) center / contain no-repeat;
+    mask: var(--escr-icon-user) center / contain no-repeat;
+}
+html:has(#main.escr-vue-enabled) #rights-table .badge.badge-pill.badge-secondary::before {
+    -webkit-mask-image: var(--escr-icon-users);
+    mask-image: var(--escr-icon-users);
+}
+/* the full name or the group's number: secondary to the name */
+html:has(#main.escr-vue-enabled) #rights-table tbody tr:not(:has(#id_group)) > td:nth-child(3) {
+    color: var(--text2);
+}
+
+/* icons: Lucide outlines in place of the Font Awesome glyphs */
+html:has(#main.escr-vue-enabled) #rights-table i.fas {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    background-color: currentColor;
+    -webkit-mask: var(--escr-icon-trash) center / contain no-repeat;
+    mask: var(--escr-icon-trash) center / contain no-repeat;
+    vertical-align: middle;
+}
+html:has(#main.escr-vue-enabled) #rights-table i.fas::before {
+    content: none;
+}
+html:has(#main.escr-vue-enabled) #rights-table i.fas.fa-plus {
+    -webkit-mask-image: var(--escr-icon-plus);
+    mask-image: var(--escr-icon-plus);
+}
+/* stop sharing: a quiet icon button, red when pointed at */
+html:has(#main.escr-vue-enabled) #rights-table td .btn.btn-sm.btn-danger:has(i.fas) {
+    width: 28px;
+    min-width: 28px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--text2);
+}
+html:has(#main.escr-vue-enabled) #rights-table td .btn.btn-sm.btn-danger:has(i.fas):hover {
+    border: none;
+    background-color: color-mix(in srgb, var(--alert) 14%, transparent);
+    color: var(--alert);
+}
+html:has(#main.escr-vue-enabled) #rights-table tr > td:last-child {
+    width: 1%;
+    text-align: right;
+}
+
+/*
+ * Sharing with someone new: the last row, set apart from the shares. The
+ * user and the group fields side by side, "or" between them, then the
+ * button.
+ */
+html:has(#main.escr-vue-enabled) #rights-table tbody tr:has(#id_group) {
+    background: none;
+}
+html:has(#main.escr-vue-enabled) #rights-table tbody tr:has(#id_group) > td {
+    padding-top: 20px;
+    border-top: 1px solid var(--divider);
+    background: none;
+    vertical-align: top;
+}
+html:has(#main.escr-vue-enabled) #rights-table tbody tr:has(#id_group) > td[colspan] {
+    text-align: left;
+}
+html:has(#main.escr-vue-enabled) #rights-table tbody tr:has(#id_group) > td[colspan] > div {
+    width: min(260px, 40%);
+    vertical-align: top;
+}
+html:has(#main.escr-vue-enabled) #rights-table tbody tr:has(#id_group) .form-group {
+    margin-bottom: 0;
+}
+html:has(#main.escr-vue-enabled) #rights-table tbody tr:has(#id_group) > td[colspan] > strong {
+    display: inline-block;
+    padding: 0 12px !important;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 32px;
+    color: var(--text3);
+    vertical-align: top;
+}
+/* the field labels sit above: the "or" and the button line up with the fields */
+html:has(#main.escr-vue-enabled) #rights-table tbody tr:has(#id_group):has(label) > td[colspan] > strong,
+html:has(#main.escr-vue-enabled) #rights-table tbody tr:has(#id_group):has(label) > td:last-child {
+    padding-top: calc(20px + 22px) !important;
+}
+/* add: the page's one coloured button, a square with a plus */
+html:has(#main.escr-vue-enabled) #rights-table tbody tr:has(#id_group) .btn.btn-success {
+    width: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    padding: 0;
+    color: var(--button-text);
+}
+
+/* ======== stopping a share: the confirmation ======== */
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> form a[href$="/rights/"]) > h2 {
+    margin: 0 0 16px;
+    font-family: "Noto Sans", "Resized Arabic", sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 33px;
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> form a[href$="/rights/"]) > form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    max-width: 640px;
+}
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> form a[href$="/rights/"]) > form > p {
+    flex: 0 0 100%;
+    margin: 0 0 12px;
+    font-size: 14px;
+    line-height: 22px;
+    color: var(--text1);
+}
+/* Cancel: the neutral button (Bootstrap 4 has no btn-default) */
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> form a[href$="/rights/"]) > form .btn.btn-default {
+    order: -1;
+    border: 1px solid var(--divider);
+    background-color: var(--background1);
+    color: var(--text1);
+    text-decoration: none;
+}
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> form a[href$="/rights/"]) > form .btn.btn-default:hover {
+    border-color: var(--background2-darker);
+}
+
+/* ======== the user's teams ======== */
+
+/* an invitation's Accept: a small button, not a bare link */
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> .container > .col-md-8 > form #id_name) table.table td.col-auto > a[href*="/accept/"] {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: 8px;
+    background-color: var(--primary);
+    color: var(--button-text);
+    font-size: 12.5px;
+    font-weight: 500;
+    text-decoration: none;
+}
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> .container > .col-md-8 > form #id_name) table.table td.col-auto > a[href*="/accept/"]:hover {
+    background-color: var(--primary-dark);
+}
+/* a team you own opens its page */
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> .container > .col-md-8 > form #id_name) table.table td.col > a {
+    color: var(--text1);
+    font-weight: 500;
+    text-decoration: none;
+}
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> .container > .col-md-8 > form #id_name) table.table td.col > a:hover {
+    color: var(--primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+/* ======== a team ======== */
+
+/* "Back to teams": a quiet link above the title */
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> .container #id_recipient_id) > a.breadcrumbs {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin: 0 0 6px -4px;
+    padding: 2px 6px 2px 2px;
+    border-radius: 6px;
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+}
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> .container #id_recipient_id) > a.breadcrumbs::before {
+    content: "";
+    width: 16px;
+    height: 16px;
+    background-color: currentColor;
+    -webkit-mask: var(--escr-icon-chevron-left) center / contain no-repeat;
+    mask: var(--escr-icon-chevron-left) center / contain no-repeat;
+}
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> .container #id_recipient_id) > a.breadcrumbs:hover {
+    background-color: var(--nav-active);
+    color: var(--text1);
+}
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> .container #id_recipient_id) > h1 {
+    margin-bottom: 0;
+}
+/* the invitation form: its sentence a quiet lead-in */
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> .container #id_recipient_id) > .container > form {
+    font-size: 13px;
+    line-height: 20px;
+    color: var(--text2);
+}
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> .container #id_recipient_id) > .container > form .form-row {
+    margin-top: 8px;
+}
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> .container #id_recipient_id) .form-text {
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 17px;
+    color: var(--text3);
+}
+/* the button lines up with the field, under its label */
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> .container #id_recipient_id) .form-row:has(label) > .col-auto {
+    padding-top: 22px;
+}
+/* handing the team over: neutral, it's not a warning */
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> .container #id_recipient_id) table.table td .btn.btn-warning {
+    min-height: 28px;
+    padding: 0 10px;
+    border: 1px solid var(--divider);
+    background-color: var(--background1);
+    color: var(--text1);
+    font-size: 12.5px;
+}
+html:has(#main.escr-vue-enabled) #main.escr-vue-enabled:has(> .container #id_recipient_id) table.table td .btn.btn-warning:hover {
+    border-color: var(--background2-darker);
+}
