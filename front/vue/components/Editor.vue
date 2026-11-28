@@ -60,6 +60,7 @@
             :on-cancel="closeDeleteTranscriptionModal"
             :on-confirm="deleteTranscription"
         />
+        <EditorTaskModals v-if="!legacyModeEnabled" />
         <TranscriptionModal
             v-if="!legacyModeEnabled && editedLine"
             :legacy-mode-enabled="legacyModeEnabled"
@@ -77,6 +78,7 @@ import Alerts from "./Toast/ToastGroup.vue";
 import ConfirmModal from "./ConfirmModal/ConfirmModal.vue";
 import CopyTranscriptionModal from "./CopyTranscriptionModal/CopyTranscriptionModal.vue";
 import EditorNavigation from "./EditorNavigation/EditorNavigation.vue";
+import EditorTaskModals from "./EditorTaskModals/EditorTaskModals.vue";
 import ElementDetailsModal from "./ElementDetailsModal/ElementDetailsModal.vue";
 import ExtraInfo from "./ExtraInfo.vue";
 import ExtraNav from "./ExtraNav.vue";
@@ -95,6 +97,7 @@ export default {
         CopyTranscriptionModal,
         ElementDetailsModal,
         EditorNavigation,
+        EditorTaskModals,
         ExtraInfo,
         ExtraNav,
         OntologyModal,
@@ -361,6 +364,9 @@ export default {
                     }
                 });
                 this.add({ color: "success", message: "Successfully calculated masks" });
+            } else if (data.type === "event" && data.name === "part:workflow") {
+                // a task on an image: if it's the open one, lock or reload it
+                this.$store.dispatch("partTasks/handleWorkflowEvent", data.data);
             }
         },
     }

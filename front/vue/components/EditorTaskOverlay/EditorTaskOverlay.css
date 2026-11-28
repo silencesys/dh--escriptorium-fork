@@ -1,0 +1,77 @@
+/*
+ * Over the editor's panels while the open image is segmented or transcribed.
+ * It shows nothing itself (the image does: PartTaskScan) but takes every
+ * click, so nothing can be edited, and holds the status card.
+ */
+div.escr-editor-tabcontent > .row.marginless {
+    position: relative;
+}
+.escr-part-task-overlay {
+    position: absolute;
+    /* over the panels only, not the page gutters beside them */
+    inset: 0 var(--page-gutter-end, 0px) 0 var(--page-gutter-start, 0px);
+    z-index: 10;
+    cursor: progress;
+}
+
+/* the card, like a toast: at the foot of the image, clear of the first lines */
+.escr-part-task-card {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: calc(100% - 32px);
+    padding: 8px 8px 8px 14px;
+    background-color: var(--background1);
+    color: var(--text1);
+    border: 1px solid var(--divider);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px var(--drop-shadow);
+    cursor: default;
+}
+.escr-part-task-spinner {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    color: var(--primary);
+    animation: escr-part-task-spin 0.9s linear infinite;
+}
+@keyframes escr-part-task-spin {
+    to { transform: rotate(360deg); }
+}
+.escr-part-task-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.escr-part-task-text strong {
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+}
+.escr-part-task-text span {
+    font-size: 13px;
+    line-height: 18px;
+    color: var(--text2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.escr-part-task-fade-enter-active,
+.escr-part-task-fade-leave-active {
+    transition: opacity 0.2s ease;
+}
+.escr-part-task-fade-enter,
+.escr-part-task-fade-leave-to {
+    opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .escr-part-task-spinner {
+        animation: none;
+    }
+}

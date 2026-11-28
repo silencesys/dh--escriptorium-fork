@@ -1,0 +1,141 @@
+/*
+ * The image while a task runs on it (see PartTaskScan.vue). It sits in the
+ * image's zoom container, which is the image's size, so % are of the image.
+ */
+.escr-part-scan {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 1;
+}
+/* the page dims a little, like under a scanner's lid */
+.escr-part-scan-veil {
+    position: absolute;
+    inset: 0;
+    background-color: rgb(9 9 11 / 22%);
+    transition: background-color 0.3s ease;
+}
+.escr-part-scan.is-read .escr-part-scan-veil {
+    background-color: rgb(9 9 11 / 14%);
+}
+
+/*
+ * Segmenting: a scanner lamp. A band 18% of the page tall whose foot is the
+ * lamp: a white-hot line in a tinted glow, with the light it casts on the
+ * page just passed trailing behind. It crosses the page, then the carriage
+ * returns, faster and dimmed.
+ */
+.escr-part-scan-lamp {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 18%;
+    background: linear-gradient(
+        to bottom,
+        transparent 0%,
+        rgb(255 255 255 / 4%) 50%,
+        color-mix(in srgb, var(--primary) 22%, rgb(255 255 255 / 12%)) 88%,
+        color-mix(in srgb, var(--primary) 55%, rgb(255 255 255 / 40%)) 95.5%,
+        rgb(255 255 255 / 95%) 97%,
+        color-mix(in srgb, var(--primary) 45%, transparent) 98.2%,
+        transparent 100%
+    );
+    transform: translateY(-100%);
+    animation: escr-part-scan-pass 4.4s infinite;
+    will-change: transform, opacity;
+}
+/* 100% = the band's height: 456% puts its foot on the page's foot */
+@keyframes escr-part-scan-pass {
+    0% {
+        transform: translateY(-100%);
+        opacity: 1;
+        animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+    }
+    72% {
+        transform: translateY(470%);
+        opacity: 1;
+    }
+    76% {
+        transform: translateY(470%);
+        opacity: 0.3;
+        animation-timing-function: cubic-bezier(0.6, 0, 0.4, 1);
+    }
+    100% {
+        transform: translateY(-100%);
+        opacity: 0.3;
+    }
+}
+/* queued: the lamp idles, slow and faint */
+.escr-part-scan.is-pending .escr-part-scan-lamp {
+    animation-duration: 7s;
+    opacity: 0.5;
+}
+
+/*
+ * Transcribing: the lines, read one after the other. Lines already read keep
+ * a tint; the one being read is crossed by a glow ending in a bright edge.
+ */
+.escr-part-scan-lines {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+.escr-part-scan-lines polygon {
+    fill: var(--primary);
+    fill-opacity: 0;
+    transition: fill-opacity 0.4s ease;
+}
+.escr-part-scan-lines polygon.read {
+    fill-opacity: 0.24;
+}
+.escr-part-scan-head {
+    position: absolute;
+    overflow: hidden;
+}
+.escr-part-scan-glow {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to right,
+        transparent 0%,
+        color-mix(in srgb, var(--primary) 24%, transparent) 40%,
+        color-mix(in srgb, var(--primary) 60%, rgb(255 255 255 / 20%)) 86%,
+        rgb(255 255 255 / 95%) 97.5%,
+        transparent 100%
+    );
+    transform: translateX(-100%);
+    animation-name: escr-part-scan-read;
+    animation-timing-function: cubic-bezier(0.3, 0, 0.7, 1);
+    animation-fill-mode: forwards;
+    will-change: transform;
+}
+.escr-part-scan-glow.rtl {
+    background: linear-gradient(
+        to left,
+        transparent 0%,
+        color-mix(in srgb, var(--primary) 24%, transparent) 40%,
+        color-mix(in srgb, var(--primary) 60%, rgb(255 255 255 / 20%)) 86%,
+        rgb(255 255 255 / 95%) 97.5%,
+        transparent 100%
+    );
+    transform: translateX(100%);
+}
+@keyframes escr-part-scan-read {
+    to { transform: translateX(0); }
+}
+
+/* the editor's own drawing of the lines and regions steps back meanwhile */
+.js-wheelzoom-container:has(.escr-part-scan) > canvas {
+    opacity: 0.2;
+    transition: opacity 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .escr-part-scan-lamp,
+    .escr-part-scan-head {
+        display: none;
+    }
+}

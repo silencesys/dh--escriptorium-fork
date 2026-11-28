@@ -144,8 +144,9 @@ export default {
             model: (state) => state.forms.segment.model,
             overwrite: (state) => state.forms.segment.overwrite,
             textDirection: (state) => state.forms.segment.textDirection,
-            parts: (state) => state.document.parts,
-            selectedParts: (state) => state.images.selectedParts,
+            // the editor (one image, its own store) has neither
+            parts: (state) => state.document.parts || [],
+            selectedParts: (state) => (state.images && state.images.selectedParts) || [],
         }),
         // True if any of the targeted parts already have a segmentation task in progress
         segmentationInFlight() {

@@ -13,6 +13,7 @@ import documentslist from "./store/documentslist";
 import forms from "../../vue/store/modules/forms";
 import alerts from "../../vue/store/modules/alerts";
 import globalTools from "./store/globalTools";
+import partTasks from "./store/partTasks";
 import user from "../../vue/store/modules/user";
 
 Vue.use(Vuex);
@@ -31,6 +32,7 @@ export default new Vuex.Store({
         textAnnotations,
         documentslist,
         globalTools,
+        partTasks,
         forms,
         user,
     },

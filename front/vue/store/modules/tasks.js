@@ -270,6 +270,10 @@ const actions = {
         if (rootState?.forms?.segment?.overwrite) {
             params["override"] = rootState.forms.segment.overwrite;
         }
+        // the modal asks for it: send it (the server otherwise assumes horizontal-lr)
+        if (rootState?.forms?.segment?.textDirection) {
+            params["textDirection"] = rootState.forms.segment.textDirection;
+        }
         await segmentDocument(params);
     },
     /**

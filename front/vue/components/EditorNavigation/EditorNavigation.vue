@@ -74,6 +74,48 @@
                         {{ getPrevOrNextTooltip('right') }}
                     </template>
                 </VDropdown>
+                <!-- run a task on this image; the editor locks until it's done -->
+                <VDropdown
+                    class="new-section with-separator"
+                    theme="escr-tooltip-small"
+                    placement="bottom"
+                    :distance="8"
+                    :triggers="['hover']"
+                >
+                    <EscrButton
+                        color="text"
+                        aria-label="Segment This Image"
+                        :disabled="disabled || !!taskRunning"
+                        :on-click="() => openTaskModal('segment')"
+                    >
+                        <template #button-icon>
+                            <SegmentIcon />
+                        </template>
+                    </EscrButton>
+                    <template #popper>
+                        Segment This Image
+                    </template>
+                </VDropdown>
+                <VDropdown
+                    theme="escr-tooltip-small"
+                    placement="bottom"
+                    :distance="8"
+                    :triggers="['hover']"
+                >
+                    <EscrButton
+                        color="text"
+                        aria-label="Transcribe This Image"
+                        :disabled="disabled || !!taskRunning"
+                        :on-click="() => openTaskModal('transcribe')"
+                    >
+                        <template #button-icon>
+                            <RecognizeIcon />
+                        </template>
+                    </EscrButton>
+                    <template #popper>
+                        Transcribe This Image
+                    </template>
+                </VDropdown>
                 <VDropdown
                     class="new-section with-separator"
                     theme="escr-tooltip-small"
@@ -141,11 +183,13 @@
 </template>
 <script>
 import { Dropdown as VDropdown } from "floating-vue";
-import { mapActions, mapMutations, mapState } from "vuex";
+import { mapActions, mapGetters, mapMutations, mapState } from "vuex";
 import EscrBreadcrumbs from "../Breadcrumbs/Breadcrumbs.vue";
 import EscrButton from "../Button/Button.vue";
 import EscrGlobalNavigation from "../GlobalNavigation/GlobalNavigation.vue";
-import { ChevronLeft, ChevronRight, Info, Layers, Shapes } from "lucide";
+import {
+    ChevronLeft, ChevronRight, Info, Layers, ScanLine, ScanText, Shapes,
+} from "lucide";
 import lucideIcon from "../Icons/Lucide/lucideIcon";
 import "./EditorNavigation.css";
 
@@ -153,6 +197,8 @@ const ArrowCircleLeftIcon = lucideIcon(ChevronLeft);
 const ArrowCircleRightIcon = lucideIcon(ChevronRight);
 const InfoOutlineIcon = lucideIcon(Info);
 const OntologyIcon = lucideIcon(Shapes);
+const RecognizeIcon = lucideIcon(ScanText);
+const SegmentIcon = lucideIcon(ScanLine);
 const TranscribeIcon = lucideIcon(Layers);
 
 export default {
@@ -165,6 +211,8 @@ export default {
         EscrGlobalNavigation,
         InfoOutlineIcon,
         OntologyIcon,
+        RecognizeIcon,
+        SegmentIcon,
         TranscribeIcon,
         VDropdown,
     },
@@ -192,6 +240,7 @@ export default {
             projectSlug: (state) => state.document.projectSlug,
             readDirection: (state) => state.document.readDirection,
         }),
+        ...mapGetters("partTasks", { taskRunning: "running" }),
         breadcrumbs() {
             let breadcrumbs = [{ title: "Loading..." }];
             if (this.projectName && this.projectSlug && this.documentName && this.documentId) {
@@ -235,6 +284,7 @@ export default {
     methods: {
         ...mapActions("parts", ["loadPart", "loadPartByOrder"]),
         ...mapActions("globalTools", ["openModal"]),
+        ...mapActions("partTasks", { openTaskModal: "openModal" }),
         ...mapMutations("document", ["setBlockShortcuts"]),
         hasPrevOrNextElement(direction) {
             if (direction === "left") {

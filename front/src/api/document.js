@@ -325,6 +325,7 @@ export const segmentDocument = async ({
     model,
     steps,
     parts,
+    textDirection,
 }) => {
     const params = { steps, parts };
     if (override) {
@@ -332,6 +333,9 @@ export const segmentDocument = async ({
     }
     if (model) {
         params["model"] = model;
+    }
+    if (textDirection) {
+        params["text_direction"] = textDirection;
     }
     await axios.post(`/documents/${documentId}/segment/`, params);
 };

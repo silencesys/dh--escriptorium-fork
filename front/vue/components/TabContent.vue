@@ -6,7 +6,7 @@
             :on-zoom-out="zoomOut"
             :on-zoom-reset="resetZoom"
             :on-rotate="onRotate"
-            :disabled="isWorking || !partsLoaded"
+            :disabled="isWorking || !partsLoaded || !!taskRunning"
             :toggle-tool="toggleTool"
             :tool="activeTool"
         >
@@ -155,9 +155,10 @@
                     :panel-index="index"
                     :fullsizeimage="fullsizeimage"
                     :legacy-mode-enabled="legacyModeEnabled"
-                    :disabled="isWorking"
+                    :disabled="isWorking || !!taskRunning"
                 />
             </keep-alive>
+            <EditorTaskOverlay v-if="partsLoaded" />
         </div>
     </div>
 </template>
@@ -165,6 +166,7 @@
 <script>
 import { mapActions, mapMutations, mapState } from "vuex";
 import EditorGlobalToolbar from "../components/EditorGlobalToolbar/EditorGlobalToolbar.vue";
+import EditorTaskOverlay from "./EditorTaskOverlay/EditorTaskOverlay.vue";
 import OverviewPanel from "./OverviewPanel/OverviewPanel.vue";
 import SourcePanel from "./SourcePanel.vue";
 import SegPanel from "./SegPanel.vue";
@@ -176,6 +178,7 @@ export default {
     components: {
         DiploPanel,
         EditorGlobalToolbar,
+        EditorTaskOverlay,
         OverviewPanel,
         PartMetadataPanel,
         SegPanel,
@@ -217,6 +220,10 @@ export default {
             visiblePanels: (state) => state.document.visible_panels,
             segmentationToken: (state) => state.document.segmentationToken,
         }),
+        // a task running on the image (new UI): editing is locked until it's done
+        taskRunning() {
+            return this.legacyModeEnabled ? null : this.$store.getters["partTasks/running"];
+        },
     },
     created() {
         document.addEventListener("keydown", async function(event) {
@@ -372,6 +379,7 @@ export default {
          * @param {Number} angle The angle to rotate, in degrees
          */
         async onRotate(angle) {
+            if (this.taskRunning) return;
             try {
                 this.isWorking = true;
                 await this.rotate(angle);

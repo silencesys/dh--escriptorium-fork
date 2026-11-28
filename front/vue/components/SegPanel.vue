@@ -358,6 +358,8 @@
                         />
                     </svg>
                 </div>
+                <!-- new UI: the image while it's segmented or transcribed -->
+                <PartTaskScan v-if="!legacyModeEnabled" />
             </div>
         </div>
     </div>
@@ -374,6 +376,7 @@ import SegRegion from "./SegRegion.vue";
 import SegLine from "./SegLine.vue";
 import SegmentationToolbar from "./SegmentationToolbar/SegmentationToolbar.vue";
 import Help from "./Help.vue";
+import PartTaskScan from "./PartTaskScan/PartTaskScan.vue";
 import { Segmenter } from "../../src/baseline.editor.js";
 import { withRetry } from "../../src/editor/util/retry.js";
 
@@ -383,6 +386,7 @@ export default Vue.extend({
         segregion: SegRegion,
         help: Help,
         DetachableToolbar,
+        PartTaskScan,
         SegmentationToolbar,
     },
     mixins: [BasePanel],
@@ -523,7 +527,7 @@ export default Vue.extend({
         },
         disabled: function (isDisabled, _) {
             // pass disabled state along to segmenter to prevent keyboard shortcuts
-            this.segmenter.setDisabled(isDisabled);
+            this.segmenter.setDisabled(isDisabled || this.blockShortcuts);
         },
         "$store.state.parts.loaded": function (isLoaded, wasLoaded) {
             if (isLoaded === true) {
@@ -556,7 +560,8 @@ export default Vue.extend({
         },
         "$store.state.document.blockShortcuts": function(n, o) {
             // make sure the segmenter does not trigger keyboard shortcuts either
-            this.segmenter.disableShortcuts = n;
+            // (closing a modal doesn't re-enable them on a disabled panel)
+            this.segmenter.disableShortcuts = n || this.disabled;
         },
         // watch the token (not the pk) so re-selecting the same element (e.g. clicking the
         // same row twice in the Elements panel) still re-triggers selection: a click outside
@@ -627,6 +632,8 @@ export default Vue.extend({
                         ...typeColors(this.$store.state.document.types.lines),
                     },
                     newUiEnabled: !this.legacyModeEnabled,
+                    // e.g. opened on an image that's being segmented (watched below after)
+                    disableShortcuts: this.disabled || this.blockShortcuts,
                     toolbar: this.$refs["segmentation-toolbar"]?.$el,
                     detachableToolbar: this.$refs["detachable-toolbar"]?.$el,
                     toolbarSubmenuIds: [
@@ -832,7 +839,7 @@ export default Vue.extend({
         document.addEventListener(
             "keyup",
             function (ev) {
-                if (!this.blockShortcuts && ev.ctrlKey) {
+                if (!this.blockShortcuts && !this.disabled && ev.ctrlKey) {
                     if (ev.key.toLowerCase() == "z") this.undo();
                     if (ev.key.toLowerCase() == "y") this.redo();
                 }
